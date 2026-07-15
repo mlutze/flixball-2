@@ -6,7 +6,6 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Ellipse2D$Double
 import java.awt.geom.Line2D
 import java.awt.geom.Rectangle2D$Double
-import java.lang.Math
 import javax.swing.JPanel
 import javax.swing.JFrame
 import org.dyn4j.dynamics.Body
@@ -17,6 +16,21 @@ import org.dyn4j.world.World
 import java.util.Timer
 import java.util.TimerTask
 import org.dyn4j.geometry.Vector2
+
+use Constants.pitchLength
+use Constants.pitchWidth
+use Constants.ballRadius
+use Constants.playerRadius
+use Constants.ballDensity
+use Constants.playerDensity
+use Constants.ballFriction
+use Constants.playerFriction
+use Constants.ballRestitution
+use Constants.playerRestitution
+use Constants.ballLinearDamping
+use Constants.playerLinearDamping
+use Constants.angularDamping
+use Constants.restitutionVelocity
 
 // The main entry point.
 def main(): Unit \ IO = {
@@ -32,8 +46,8 @@ def main(): Unit \ IO = {
             let g2 = unchecked_cast(g as Graphics2D);
 
             let scale = Float64.min(
-                Int32.toFloat64(this.getWidth()) / length(),
-                Int32.toFloat64(this.getHeight()) / width()
+                Int32.toFloat64(this.getWidth()) / pitchLength(),
+                Int32.toFloat64(this.getHeight()) / pitchWidth()
             );
             let tx = new AffineTransform();
             tx.translate(
@@ -93,9 +107,9 @@ def render(shapes: List[Body]): Unit \ IO = {
 }
 
 def renderPitch(g: Graphics2D): Unit \ IO = {
-    let cornerX = -length() / 2.0;
-    let cornerY = -width() / 2.0;
-    let rectangle = new Rectangle2D$Double(cornerX, cornerY, length(), width());
+    let cornerX = -pitchLength() / 2.0;
+    let cornerY = -pitchWidth() / 2.0;
+    let rectangle = new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth());
     g.setColor((Color.GREEN).darker());
     g.fill(rectangle)
 }
@@ -143,48 +157,3 @@ def mkPlayer(): Body \ IO = {
     body
 }
 
-def length(): Float64 = 100.0
-
-def width(): Float64 = 50.0
-
-def ballRadius(): Float64 = 0.11
-
-def ballMass(): Float64 = 0.410
-
-def playerMass(): Float64 = 80.0
-
-def playerVolume(): Float64 = 4.0 / 3.0 * Math.PI * playerRadius() * playerRadius() * playerRadius() 
-
-def playerDensity(): Float64 = playerMass() / playerVolume()
-
-// revisit: this is 2-D
-def ballVolume(): Float64 = 4.0 / 3.0 * Math.PI * ballRadius() * ballRadius() * ballRadius()
-
-def ballDensity(): Float64 = ballMass() / ballVolume()
-
-// random guess; this is against other bodies
-def ballFriction(): Float64 = 0.08
-
-// maybe make player friction higher than ball friction?
-def playerFriction(): Float64 = 0.12
-
-// like friction against the ground
-
-// soccer ball on grass: light drag, coasts a while
-def ballLinearDamping(): Float64 = 0.15
-
-// running human: quick natural decay when AI isn't pushing
-def playerLinearDamping(): Float64 = 2.0
-
-def angularDamping(): Float64 = 0.8
-
-// 0.82 - 0.88 apparently
-def ballRestitution(): Float64 = 0.85
-
-// players are less bouncy than the ball
-def playerRestitution(): Float64 = 0.30
-
-def playerRadius(): Float64 = 0.5
-
-// minimum velocity for bounce 
-def restitutionVelocity(): Float64 = 0.001

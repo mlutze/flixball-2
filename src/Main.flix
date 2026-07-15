@@ -17,6 +17,7 @@ import java.util.Timer
 import java.util.TimerTask
 import org.dyn4j.geometry.Vector2
 import java.lang.Math
+import java.awt.geom.Line2D$Double
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -44,8 +45,8 @@ def main(): Unit \ IO = {
             let g2 = unchecked_cast(g as Graphics2D);
 
             let scale = Float64.min(
-                Int32.toFloat64(this.getWidth()) / pitchLength(),
-                Int32.toFloat64(this.getHeight()) / pitchWidth()
+                Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
+                Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
             );
             let tx = new AffineTransform();
             tx.translate(
@@ -96,11 +97,28 @@ def init(): MarshallBox \ IO = {
 }
 
 def renderBackground(g: Graphics2D): Unit \ IO = {
+    // grass: just do a huge background
+    g.setColor((Color.GREEN).darker());
+    g.fill(new Rectangle2D$Double(-1000.0, -1000.0, 2000.0, 2000.0));
+
+    // lines
+    g.setStroke(new BasicStroke(0.12f32));
+    g.setColor(Color.WHITE);
+
+    // outer rectangle
     let cornerX = -pitchLength() / 2.0;
     let cornerY = -pitchWidth() / 2.0;
-    let rectangle = new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth());
-    g.setColor((Color.GREEN).darker());
-    g.fill(rectangle)
+    g.draw(new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth()));
+
+    // halfway line
+    g.draw(new Line2D$Double(0.0, -pitchWidth() / 2.0 , 0.0, pitchWidth() / 2.0));
+
+    // center circle
+    g.draw(new Ellipse2D$Double(-9.15, -9.15, 18.30, 18.30));
+
+    // penalty boxes: 16.5 * 40.32
+    g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 , -20.16, 16.5, 40.32));
+    g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 16.5, -20.16, 16.5, 40.32))
 }
 
 def renderPlayer2(g: Graphics2D, player: Player): Unit \ IO = {

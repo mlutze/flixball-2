@@ -7,6 +7,10 @@ pub type alias Velocity = {
 mod Velocity {
     import java.lang.Math
     pub def toDirection(v: Velocity): Direction = {
-        unsafe IO { Math.tan(v#dy / v#dx) }
+        let len = unsafe IO { Math.sqrt(v#dx * v#dx + v#dy * v#dy) };
+        if (len == 0.0)
+            ({ ux = 0.0, uy = 0.0 })
+        else
+            ({ ux = v#dx / len, uy = v#dy / len })
     }
 }

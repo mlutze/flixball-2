@@ -1,1 +1,4 @@
-type alias Direction = Float64
+pub type alias Direction = {
+    ux = Float64,
+    uy = Float64
+}

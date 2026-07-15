@@ -152,7 +152,7 @@ def executeAi(box: MarshallBox): Unit \ IO = {
         (name, (_, body, bot)) <- box#players
     ) {
         let dir = bot(pitch, name);
-        let force_ = new Vector2(dir).multiply(playerForce());
+        let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
         discard body.applyForce(force_)
     }
 }

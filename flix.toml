@@ -1,0 +1,9 @@
+[package]
+name        = "flixball-2"
+description = "A soccer/hockey game for AI players"
+version     = "0.1.0"
+flix        = "0.75.1"
+authors     = ["Matthew Lutze"]
+
+[mvn-dependencies]
+"org.dyn4j:dyn4j" = "5.0.2"

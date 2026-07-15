@@ -74,6 +74,51 @@ def main(): Unit \ IO = {
     startGameLoop(world, panel)
 }
 
+def init(): MarshallBox \ IO = {
+    // make 22 players, 11 on each team
+    // give them each a name that is just a number
+    // give them all random starting positions and 0 velocity for now
+    // start the ball at the origin
+}
+
+def renderBackground(g: Graphics2D): Unit \ IO = {
+    let cornerX = -pitchLength() / 2.0;
+    let cornerY = -pitchWidth() / 2.0;
+    let rectangle = new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth());
+    g.setColor((Color.GREEN).darker());
+    g.fill(rectangle)
+}
+
+def renderPlayer2(g: Graphics2D, player: Player): Unit \ IO = {
+    let cornerX = player#location#x - playerRadius();
+    let cornerY = player#location#y - playerRadius();
+    let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius() * 2.0, playerRadius() * 2.0);
+    let color = match player#team {
+        case Team.Red => Color.RED
+        case Team.Blue => Color.BLUE
+    };
+    g.setColor(color);
+    g.fill(circle)
+}
+
+def renderBall2(g: Graphics2D, location: Location): Unit \ IO = {
+    let cornerX = location#x - ballRadius();
+    let cornerY = location#y - ballRadius();
+    let circle = new Ellipse2D$Double(cornerX, cornerY, ballRadius() * 2.0, ballRadius() * 2.0);
+    g.setColor(Color.WHITE);
+    g.fill(circle)
+}
+
+def renderPitch2(g: Graphics2D, pitch: Pitch): Unit \ IO = {
+    renderBackground(g);
+    foreach (
+        player <- Map.valuesOf(pitch#players)
+    ) {
+        renderPlayer2(g, player)
+    };
+    renderBall2(g, pitch#ballLocation)
+}
+
 
 def startGameLoop(world: World[Body], panel: JPanel): Unit \ IO = {
     let deltaT = 1.0 / 60.0;
@@ -93,17 +138,6 @@ def mkWorld(): World[Body] \ IO = {
     let world = new World();
     world.setGravity(World.ZERO_GRAVITY);
     world
-}
-
-def render(shapes: List[Body]): Unit \ IO = {
-    foreach (
-        shape <- shapes
-    ) {
-        let center = shape.getWorldCenter();
-        let x = center.x;
-        let y = center.y;
-        ???
-    } 
 }
 
 def renderPitch(g: Graphics2D): Unit \ IO = {

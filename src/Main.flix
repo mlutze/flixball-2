@@ -16,6 +16,7 @@ import org.dyn4j.geometry.MassType
 import org.dyn4j.world.World
 import java.util.Timer
 import java.util.TimerTask
+import org.dyn4j.geometry.Vector2
 
 // The main entry point.
 def main(): Unit \ IO = {
@@ -43,6 +44,8 @@ def main(): Unit \ IO = {
             g2.setTransform(tx);
             g2.setStroke(new BasicStroke(0.05f32));
 
+            let playerForce = new Vector2(1200.0, 0.0);
+            player.applyForce(playerForce); // TODO move to game loop
             renderPitch(g2);
             renderBall(g2, ball);
             renderPlayer(g2, player)
@@ -101,7 +104,7 @@ def renderBall(g: Graphics2D, ball: Body): Unit \ IO = {
     let center = ball.getWorldCenter();
     let cornerX = center.x - ballRadius();
     let cornerY = center.y - ballRadius();
-    let circle = new Ellipse2D$Double(cornerX, cornerY, ballRadius(), ballRadius());
+    let circle = new Ellipse2D$Double(cornerX, cornerY, ballRadius() * 2.0, ballRadius() * 2.0);
     g.setColor(Color.WHITE);
     g.fill(circle)
 }
@@ -110,7 +113,7 @@ def renderPlayer(g: Graphics2D, player: Body): Unit \ IO = {
     let center = player.getWorldCenter();
     let cornerX = center.x - playerRadius();
     let cornerY = center.y - playerRadius();
-    let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius(), playerRadius());
+    let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius() * 2.0, playerRadius() * 2.0);
     g.setColor(Color.BLUE);
     g.fill(circle)
 }
@@ -136,8 +139,7 @@ def mkPlayer(): Body \ IO = {
     body.setAngularDamping(angularDamping());
     body.setMass(MassType.NORMAL);
     body.setBullet(false);
-    body.translate(-10.0, 0.0);
-    body.setLinearVelocity(10.0, 0.0);
+    body.translate(-50.0, 0.0);
     body
 }
 

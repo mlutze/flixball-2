@@ -9,17 +9,21 @@ import java.awt.geom.Ellipse2D$Double
 import java.awt.geom.Line2D
 import java.awt.geom.Line2D$Double
 import java.awt.geom.Rectangle2D$Double
+import java.awt.event.ActionListener
+import java.awt.event.ActionEvent
 import java.lang.Math
 import java.util.Timer
 import java.util.TimerTask
 import javax.swing.JFrame
 import javax.swing.JPanel
+import javax.swing.JButton
 import org.dyn4j.dynamics.Body
 import org.dyn4j.dynamics.BodyFixture
 import org.dyn4j.geometry.Geometry
 import org.dyn4j.geometry.MassType
 import org.dyn4j.geometry.Vector2
 import org.dyn4j.world.World
+import java.awt.BorderLayout
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -43,7 +47,7 @@ use Rendering.renderPitch
 def main(): Unit \ IO = {
     let marshallBox = init();
 
-    let panel = new JPanel {
+    let pitchPanel = new JPanel {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
             // super.paintComponent(g);
             let g2 = unchecked_cast(g as Graphics2D);
@@ -66,13 +70,23 @@ def main(): Unit \ IO = {
             renderPitch(g2, pitch)
         }
     };
+
+    let buttonPanel = new JPanel();
+    let startButton = new JButton("Start");
+    startButton.addActionListener(new ActionListener {
+        def actionPerformed(_this: ActionListener, _e: ActionEvent): Unit \ IO = {
+            startButton.setEnabled(false);
+            startGameLoop(marshallBox, pitchPanel)
+        }
+    });
+    buttonPanel.add(startButton);
+
     let frame = new JFrame("Flixball 2");
     frame.setSize(1000, 600);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.add(panel);
-    frame.setVisible(true);
-
-    startGameLoop(marshallBox, panel)
+    frame.add(pitchPanel, BorderLayout.CENTER);
+    frame.add(buttonPanel, BorderLayout.SOUTH);
+    frame.setVisible(true)
 }
 
 def init(): MarshallBox \ IO = {
@@ -126,6 +140,7 @@ def startGameLoop(box: MarshallBox, panel: JPanel): Unit \ IO = {
     let timer = new Timer();
     let task = new TimerTask {
         def $run(_this: TimerTask): Unit \ IO = {
+            // stop if it's a goal
             executeAi(box);
             box#world.step(1, deltaT);   // dyn4j: (numSteps, elapsedTime)
             panel.repaint()

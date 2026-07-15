@@ -22,7 +22,7 @@ mod Marshall {
 
     pub def makePitch(box: MarshallBox): Pitch \ IO = {
         let players = box#players |> Map.mapWithKey(
-            name -> match (team, body) ->
+            name -> match (team, body, _) ->
                 makePlayer(body, name, team)
         );
         let ballLocation = getLocation(box#ball);

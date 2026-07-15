@@ -32,6 +32,7 @@ use Constants.ballLinearDamping
 use Constants.playerLinearDamping
 use Constants.angularDamping
 use Constants.restitutionVelocity
+use Constants.playerForce
 
 // The main entry point.
 def main(): Unit \ IO = {
@@ -66,7 +67,7 @@ def main(): Unit \ IO = {
     frame.add(panel);
     frame.setVisible(true);
 
-    startGameLoop(marshallBox#world, panel)
+    startGameLoop(marshallBox, panel)
 }
 
 def init(): MarshallBox \ IO = {
@@ -82,7 +83,7 @@ def init(): MarshallBox \ IO = {
         let body = mkPlayer();
         body.translate(randomX(), randomY());
         world.addBody(body);
-        (Int32.toString(num), (team, body))
+        (Int32.toString(num), (team, body, Bots.runAtBall))
     };
 
     let blue = List.range(1, 12)  |> List.map(n -> mkOne(n, Team.Blue));
@@ -131,19 +132,30 @@ def renderPitch2(g: Graphics2D, pitch: Pitch): Unit \ IO = {
 }
 
 
-def startGameLoop(world: World[Body], panel: JPanel): Unit \ IO = {
+def startGameLoop(box: MarshallBox, panel: JPanel): Unit \ IO = {
     let deltaT = 1.0 / 60.0;
 
     let timer = new Timer();
     let task = new TimerTask {
         def $run(_this: TimerTask): Unit \ IO = {
-            world.step(1, deltaT);   // dyn4j: (numSteps, elapsedTime)
+            executeAi(box);
+            box#world.step(1, deltaT);   // dyn4j: (numSteps, elapsedTime)
             panel.repaint()
         }
     };
     timer.scheduleAtFixedRate(task, 0i64, 16i64)
 }
 
+def executeAi(box: MarshallBox): Unit \ IO = {
+    let pitch = Marshall.makePitch(box);
+    foreach (
+        (name, (_, body, bot)) <- box#players
+    ) {
+        let dir = bot(pitch, name);
+        let force_ = new Vector2(dir).multiply(playerForce());
+        discard body.applyForce(force_)
+    }
+}
 
 def mkWorld(): World[Body] \ IO = {
     let world = new World();

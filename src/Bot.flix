@@ -1,0 +1,1 @@
+type alias Bot = (Pitch, String) -> Direction

@@ -50,4 +50,6 @@ mod Constants {
     // minimum velocity for bounce
     pub def restitutionVelocity(): Float64 = 0.001
 
+    pub def playerForce(): Float64 = 1200.0
+
 }

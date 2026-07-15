@@ -18,6 +18,8 @@ import java.util.TimerTask
 import org.dyn4j.geometry.Vector2
 import java.lang.Math
 import java.awt.geom.Line2D$Double
+import java.awt.geom.Arc2D$Double
+import java.awt.RenderingHints
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -43,6 +45,7 @@ def main(): Unit \ IO = {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
             // super.paintComponent(g);
             let g2 = unchecked_cast(g as Graphics2D);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             let scale = Float64.min(
                 Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
@@ -96,6 +99,25 @@ def init(): MarshallBox \ IO = {
     { world = world, players = players, ball = ball }
 }
 
+// fills the given rectangle (in world coords) with a diagonal crosshatch pattern
+def crosshatch(g: Graphics2D, x: Float64, y: Float64, w: Float64, h: Float64): Unit \ IO = {
+    let oldClip   = g.getClip();
+    let oldStroke = g.getStroke();
+    g.setClip(new Rectangle2D$Double(x, y, w, h));
+    g.setStroke(new BasicStroke(0.04f32));
+    let spacing = 0.5;
+    let extent  = w + h;   // long enough for any diagonal to cross the rect fully
+    foreach (i <- List.range(-40, 40)) {
+        let off = Int32.toFloat64(i) * spacing;
+        // ↗ diagonals
+        g.draw(new Line2D$Double(x + off, y, x + off + extent, y + extent));
+        // ↘ diagonals
+        g.draw(new Line2D$Double(x + off, y + h, x + off + extent, y + h - extent))
+    };
+    g.setStroke(oldStroke);
+    g.setClip(oldClip)
+}
+
 def renderBackground(g: Graphics2D): Unit \ IO = {
     // grass: just do a huge background
     g.setColor((Color.GREEN).darker());
@@ -118,7 +140,31 @@ def renderBackground(g: Graphics2D): Unit \ IO = {
 
     // penalty boxes: 16.5 * 40.32
     g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 , -20.16, 16.5, 40.32));
-    g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 16.5, -20.16, 16.5, 40.32))
+    g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 16.5, -20.16, 16.5, 40.32));
+
+    // goal areas (6-yard boxes): 5.5 deep * 18.32 wide
+    g.draw(new Rectangle2D$Double(-pitchLength() / 2.0, -9.16, 5.5, 18.32));
+    g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 5.5, -9.16, 5.5, 18.32));
+
+    // goals: 2 deep * 7.32 wide, drawn behind the goal line, with a net-like crosshatch
+    g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 - 2.0, -3.66, 2.0, 7.32));
+    g.draw(new Rectangle2D$Double(pitchLength() / 2.0, -3.66, 2.0, 7.32));
+    crosshatch(g, -pitchLength() / 2.0 - 2.0, -3.66, 2.0, 7.32);
+    crosshatch(g, pitchLength() / 2.0, -3.66, 2.0, 7.32);
+
+    // penalty spots: 11 m from goal line, filled dot
+    g.fill(new Ellipse2D$Double(-pitchLength() / 2.0 + 11.0 - 0.15, -0.15, 0.30, 0.30));
+    g.fill(new Ellipse2D$Double(pitchLength() / 2.0 - 11.0 - 0.15, -0.15, 0.30, 0.30));
+
+    // penalty arcs: radius 9.15 m from penalty spot, portion outside the penalty box.
+    // half-angle to where the arc meets the front of the penalty box: acos(5.5/9.15) ≈ 53°
+    let leftSpotX = -pitchLength() / 2.0 + 11.0;
+    let rightSpotX = pitchLength() / 2.0 - 11.0;
+    // Arc2D.OPEN = 0
+    // left arc opens toward +x: sweep from -53° through 0° to +53°
+    g.draw(new Arc2D$Double(leftSpotX - 9.15, -9.15, 18.30, 18.30, -53.0, 106.0, 0));
+    // right arc opens toward -x: sweep from 127° through 180° to 233°
+    g.draw(new Arc2D$Double(rightSpotX - 9.15, -9.15, 18.30, 18.30, 127.0, 106.0, 0))
 }
 
 def renderPlayer2(g: Graphics2D, player: Player): Unit \ IO = {

@@ -1,7 +1,9 @@
 JARFILE = artifact/flixball-2.jar
 FLIX_SOURCES = $(shell find src -name '*.flix')
 
-.PHONY: run
+.PHONY: all run
+
+all: $(JARFILE)
 
 run: $(JARFILE)
 	java -jar $(JARFILE)

@@ -20,7 +20,7 @@ mod Marshall {
         }
     }
 
-    def makePitch(box: MarshallBox): Pitch \ IO = {
+    pub def makePitch(box: MarshallBox): Pitch \ IO = {
         let players = box#players |> Map.mapWithKey(
             name -> match (team, body) ->
                 makePlayer(body, name, team)

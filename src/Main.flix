@@ -16,6 +16,7 @@ import org.dyn4j.world.World
 import java.util.Timer
 import java.util.TimerTask
 import org.dyn4j.geometry.Vector2
+import java.lang.Math
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -34,11 +35,7 @@ use Constants.restitutionVelocity
 
 // The main entry point.
 def main(): Unit \ IO = {
-    let world = mkWorld();
-    let ball = mkBall();
-    let player = mkPlayer();
-    world.addBody(ball);
-    world.addBody(player);
+    let marshallBox = init();
 
     let panel = new JPanel {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
@@ -58,11 +55,9 @@ def main(): Unit \ IO = {
             g2.setTransform(tx);
             g2.setStroke(new BasicStroke(0.05f32));
 
-            let playerForce = new Vector2(1200.0, 0.0);
-            player.applyForce(playerForce); // TODO move to game loop
-            renderPitch(g2);
-            renderBall(g2, ball);
-            renderPlayer(g2, player)
+            // let playerForce = new Vector2(1200.0, 0.0);
+            let pitch = Marshall.makePitch(marshallBox);
+            renderPitch2(g2, pitch)
         }
     };
     let frame = new JFrame("Flixball 2");
@@ -71,14 +66,30 @@ def main(): Unit \ IO = {
     frame.add(panel);
     frame.setVisible(true);
 
-    startGameLoop(world, panel)
+    startGameLoop(marshallBox#world, panel)
 }
 
 def init(): MarshallBox \ IO = {
-    // make 22 players, 11 on each team
-    // give them each a name that is just a number
-    // give them all random starting positions and 0 velocity for now
-    // start the ball at the origin
+    let world = mkWorld();
+    let ball = mkBall();
+    world.addBody(ball);
+
+    // random point strictly inside the pitch, leaving room for the player radius
+    let randomX = () -> (Math.random() - 0.5) * (pitchLength() - 2.0 * playerRadius());
+    let randomY = () -> (Math.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius());
+
+    let mkOne = (num, team) -> {
+        let body = mkPlayer();
+        body.translate(randomX(), randomY());
+        world.addBody(body);
+        (Int32.toString(num), (team, body))
+    };
+
+    let blue = List.range(1, 12)  |> List.map(n -> mkOne(n, Team.Blue));
+    let red  = List.range(12, 23) |> List.map(n -> mkOne(n, Team.Red));
+    let players = List.toMap(List.append(blue, red));
+
+    { world = world, players = players, ball = ball }
 }
 
 def renderBackground(g: Graphics2D): Unit \ IO = {
@@ -139,33 +150,6 @@ def mkWorld(): World[Body] \ IO = {
     world.setGravity(World.ZERO_GRAVITY);
     world
 }
-
-def renderPitch(g: Graphics2D): Unit \ IO = {
-    let cornerX = -pitchLength() / 2.0;
-    let cornerY = -pitchWidth() / 2.0;
-    let rectangle = new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth());
-    g.setColor((Color.GREEN).darker());
-    g.fill(rectangle)
-}
-
-def renderBall(g: Graphics2D, ball: Body): Unit \ IO = {
-    let center = ball.getWorldCenter();
-    let cornerX = center.x - ballRadius();
-    let cornerY = center.y - ballRadius();
-    let circle = new Ellipse2D$Double(cornerX, cornerY, ballRadius() * 2.0, ballRadius() * 2.0);
-    g.setColor(Color.WHITE);
-    g.fill(circle)
-}
-
-def renderPlayer(g: Graphics2D, player: Body): Unit \ IO = {
-    let center = player.getWorldCenter();
-    let cornerX = center.x - playerRadius();
-    let cornerY = center.y - playerRadius();
-    let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius() * 2.0, playerRadius() * 2.0);
-    g.setColor(Color.BLUE);
-    g.fill(circle)
-}
-
 def mkBall(): Body \ IO = {
     let shape = Geometry.createCircle(ballRadius());
     let body = new Body();
@@ -187,7 +171,6 @@ def mkPlayer(): Body \ IO = {
     body.setAngularDamping(angularDamping());
     body.setMass(MassType.NORMAL);
     body.setBullet(false);
-    body.translate(-50.0, 0.0);
     body
 }
 

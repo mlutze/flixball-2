@@ -21,7 +21,9 @@ import java.util.TimerTask
 def main(): Unit \ IO = {
     let world = mkWorld();
     let ball = mkBall();
+    let player = mkPlayer();
     world.addBody(ball);
+    world.addBody(player);
 
     let panel = new JPanel {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
@@ -42,7 +44,8 @@ def main(): Unit \ IO = {
             g2.setStroke(new BasicStroke(0.05f32));
 
             renderPitch(g2);
-            renderBall(g2, ball)
+            renderBall(g2, ball);
+            renderPlayer(g2, player)
         }
     };
     let frame = new JFrame("Flixball 2");
@@ -103,6 +106,15 @@ def renderBall(g: Graphics2D, ball: Body): Unit \ IO = {
     g.fill(circle)
 }
 
+def renderPlayer(g: Graphics2D, player: Body): Unit \ IO = {
+    let center = player.getWorldCenter();
+    let cornerX = center.x - playerRadius();
+    let cornerY = center.y - playerRadius();
+    let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius(), playerRadius());
+    g.setColor(Color.BLUE);
+    g.fill(circle)
+}
+
 def mkBall(): Body \ IO = {
     let shape = Geometry.createCircle(ballRadius());
     let body = new Body();
@@ -112,7 +124,6 @@ def mkBall(): Body \ IO = {
     body.setAngularDamping(angularDamping());
     body.setMass(MassType.NORMAL);
     body.setBullet(true);
-    body.setLinearVelocity(5.0, 5.0); // TMP FOR TESTING
     body
 }
 
@@ -125,6 +136,8 @@ def mkPlayer(): Body \ IO = {
     body.setAngularDamping(angularDamping());
     body.setMass(MassType.NORMAL);
     body.setBullet(false);
+    body.translate(-10.0, 0.0);
+    body.setLinearVelocity(10.0, 0.0);
     body
 }
 

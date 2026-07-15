@@ -114,26 +114,6 @@ def init(): MarshallBox \ IO = {
     { world = world, players = players, ball = ball }
 }
 
-// fills the given rectangle (in world coords) with a diagonal crosshatch pattern
-def crosshatch(g: Graphics2D, x: Float64, y: Float64, w: Float64, h: Float64): Unit \ IO = {
-    let oldClip   = g.getClip();
-    let oldStroke = g.getStroke();
-    g.setClip(new Rectangle2D$Double(x, y, w, h));
-    g.setStroke(new BasicStroke(0.04f32));
-    let spacing = 0.5;
-    let extent  = w + h;   // long enough for any diagonal to cross the rect fully
-    foreach (i <- List.range(-40, 40)) {
-        let off = Int32.toFloat64(i) * spacing;
-        // ↗ diagonals
-        g.draw(new Line2D$Double(x + off, y, x + off + extent, y + extent));
-        // ↘ diagonals
-        g.draw(new Line2D$Double(x + off, y + h, x + off + extent, y + h - extent))
-    };
-    g.setStroke(oldStroke);
-    g.setClip(oldClip)
-}
-
-
 def startGameLoop(box: MarshallBox, panel: JPanel): Unit \ IO = {
     let deltaT = 1.0 / 60.0;
 

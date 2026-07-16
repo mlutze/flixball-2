@@ -176,8 +176,10 @@ mod Bots {
         let meToBall = Direction.fromTo(me#location, pitch#ballLocation);
 
         let theta = Direction.angle(ballToGoal, meToBall);
+        let adjustedTheta = theta * 2.0;
+        let boundedTheta = adjustedTheta |> Float64.max(-Math.PI / 2.0) |> Float64.min(Math.PI / 2.0);
 
-        Direction.addAngle(meToBall, theta * 2.0)
+        Direction.addAngle(meToBall, boundedTheta)
     }
 
     pub def defendEast(pitch: Pitch, me: Player): Direction = {

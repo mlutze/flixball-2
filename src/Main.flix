@@ -63,13 +63,11 @@ def main(): Unit \ IO = {
                 Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
                 Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
             );
-            let tx = new AffineTransform();
-            tx.translate(
+            g2.translate(
                 Int32.toFloat64(this.getWidth()) / 2.0,
                 Int32.toFloat64(this.getHeight()) / 2.0
             );
-            tx.scale(scale, -scale);
-            g2.setTransform(tx);
+            g2.scale(scale, -scale);
             g2.setStroke(new BasicStroke(0.05f32));
 
             let pitch = Marshall.makePitch(marshallBox);
@@ -91,8 +89,8 @@ def main(): Unit \ IO = {
     frame.setSize(1000, 600);
     frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.add(timePanel, BorderLayout.NORTH);
     frame.add(pitchPanel, BorderLayout.CENTER);
+    frame.add(timePanel, BorderLayout.NORTH);
     frame.add(buttonPanel, BorderLayout.SOUTH);
     frame.setVisible(true)
 }

@@ -1,3 +1,4 @@
+import javax.swing.SwingUtilities
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics
@@ -12,8 +13,7 @@ import java.awt.geom.Rectangle2D$Double
 import java.awt.event.ActionListener
 import java.awt.event.ActionEvent
 import java.lang.Math
-import java.util.Timer
-import java.util.TimerTask
+import javax.swing.Timer
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JButton
@@ -24,6 +24,7 @@ import org.dyn4j.geometry.MassType
 import org.dyn4j.geometry.Vector2
 import org.dyn4j.world.World
 import java.awt.BorderLayout
+import javax.swing.JLabel
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -46,6 +47,11 @@ use Rendering.renderPitch
 // The main entry point.
 def main(): Unit \ IO = {
     let marshallBox = init();
+
+    let timePanel = new JPanel();
+    let timeLabel = new JLabel();
+    timePanel.add(timeLabel);
+    timeLabel.setText("0.0");
 
     let pitchPanel = new JPanel {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
@@ -76,14 +82,16 @@ def main(): Unit \ IO = {
     startButton.addActionListener(new ActionListener {
         def actionPerformed(_this: ActionListener, _e: ActionEvent): Unit \ IO = {
             startButton.setEnabled(false);
-            startGameLoop(marshallBox, pitchPanel)
+            startGameLoop(marshallBox, pitchPanel, timeLabel)
         }
     });
     buttonPanel.add(startButton);
 
     let frame = new JFrame("Flixball 2");
     frame.setSize(1000, 600);
+    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.add(timePanel, BorderLayout.NORTH);
     frame.add(pitchPanel, BorderLayout.CENTER);
     frame.add(buttonPanel, BorderLayout.SOUTH);
     frame.setVisible(true)
@@ -111,22 +119,29 @@ def init(): MarshallBox \ IO = {
     let red  = List.range(12, 23) |> List.map(n -> mkOne(n, Team.Red));
     let players = List.toMap(List.append(blue, red));
 
-    { world = world, players = players, ball = ball }
+    { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}
 }
 
-def startGameLoop(box: MarshallBox, panel: JPanel): Unit \ IO = {
-    let deltaT = 1.0 / 60.0;
+def startGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
+    let deltaTs = 1.0 / 60.0;
+    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
-    let timer = new Timer();
-    let task = new TimerTask {
-        def $run(_this: TimerTask): Unit \ IO = {
-            // stop if it's a goal
-            executeAi(box);
-            box#world.step(1, deltaT);   // dyn4j: (numSteps, elapsedTime)
-            panel.repaint()
-        }
+    def go(_) = {
+        // todo: stop if it's a goal
+        executeAi(box);
+        MarshallBox.addTimeMs(deltaTms, box);
+        box#world.step(1, deltaTs);   // dyn4j: (numSteps, elapsedTime)
+        pitchPanel.repaint();
+        timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
     };
-    timer.scheduleAtFixedRate(task, 0i64, 16i64)
+
+    new Timer(deltaTms, Utils.mkActionListener(go)).start()
+}
+
+def formatTimeMs(ms: Int32): String = {
+    let whole = ms / 1000;
+    let tenth = ms / 100 - (whole * 10);
+    "${whole}.${tenth}"
 }
 
 def executeAi(box: MarshallBox): Unit \ IO = {

@@ -55,6 +55,27 @@ mod Locations {
         y = -goalWidth() / 2.0
     }
 
+    // back-of-goal corners: goalDepth behind each goal line, at ±goalWidth/2
+    pub def goalBackNE(): Location = {
+        x =  pitchLength() / 2.0 + goalDepth(),
+        y =  goalWidth() / 2.0
+    }
+
+    pub def goalBackNW(): Location = {
+        x = -pitchLength() / 2.0 - goalDepth(),
+        y =  goalWidth() / 2.0
+    }
+
+    pub def goalBackSE(): Location = {
+        x =  pitchLength() / 2.0 + goalDepth(),
+        y = -goalWidth() / 2.0
+    }
+
+    pub def goalBackSW(): Location = {
+        x = -pitchLength() / 2.0 - goalDepth(),
+        y = -goalWidth() / 2.0
+    }
+
     // SW corners (bottom-left in world coords) of each rectangular region — what Rectangle2D wants
     pub def penaltyBoxW(): Location = {
         x = -pitchLength() / 2.0,

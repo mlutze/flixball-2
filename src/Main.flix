@@ -101,6 +101,7 @@ def init(): MarshallBox \ IO = {
     let world = mkWorld();
     let ball = mkBall();
     world.addBody(ball);
+    addGoalWalls(world);
 
     // random point strictly inside the pitch, leaving room for the player radius
     let randomX = () -> (Math.random() - 0.5) * (pitchLength() - 2.0 * playerRadius());
@@ -127,7 +128,6 @@ def startGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def go(_) = {
-        // todo: stop if it's a goal
         executeAi(box);
         MarshallBox.addTimeMs(deltaTms, box);
         box#world.step(1, deltaTs);   // dyn4j: (numSteps, elapsedTime)
@@ -182,5 +182,30 @@ def mkPlayer(): Body \ IO = {
     body.setMass(MassType.NORMAL);
     body.setBullet(false);
     body
+}
+
+// static infinite-mass wall as a line segment between two world points
+def mkWall(a: Location, b: Location): Body \ IO = {
+    let start = new Vector2(a#x, a#y);
+    let end   = new Vector2(b#x, b#y);
+    let shape = Geometry.createSegment(start, end);
+    let body  = new Body();
+    // arbitrary density because infinite
+    // restitution and friction just guessing for now
+    discard body.addFixture(shape, 1.0, 0.3, 0.2);
+    body.setMass(MassType.INFINITE);
+    body
+}
+
+def addGoalWalls(world: World[Body]): Unit \ IO = {
+    // west
+    world.addBody(mkWall(Locations.goalpostNW(), Locations.goalBackNW()));   // top
+    world.addBody(mkWall(Locations.goalpostSW(), Locations.goalBackSW()));   // bottom
+    world.addBody(mkWall(Locations.goalBackNW(), Locations.goalBackSW()));   // back
+
+    // east
+    world.addBody(mkWall(Locations.goalpostNE(), Locations.goalBackNE()));   // top
+    world.addBody(mkWall(Locations.goalpostSE(), Locations.goalBackSE()));   // bottom
+    world.addBody(mkWall(Locations.goalBackNE(), Locations.goalBackSE()))    // back
 }
 

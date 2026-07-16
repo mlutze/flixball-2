@@ -57,4 +57,24 @@ mod Bots {
         };
         Velocity.toDirection(desiredVelocity)
     }
+
+    pub def shootEast(pitch: Pitch, me: Player): Direction = {
+        shoot(Locations.goalCenterE(), pitch, me)
+    }
+
+    pub def shootWest(pitch: Pitch, me: Player): Direction = {
+        shoot(Locations.goalCenterW(), pitch, me)
+    }
+
+    // go to the location where I'll be tangent to the ball,
+    // and that tangent lines up with the goal
+    def shoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let ball = pitch#ballLocation;
+        let goalBallDir = Direction.fromTo(goal, ball);
+        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
+        let ballTargetDisplacement = Displacement.inDirection(goalBallDir, centerCenterDist);
+        let target = Displacement.apply(ballTargetDisplacement, ball);
+        Direction.fromTo(me#location, target)
+    }
+
 }

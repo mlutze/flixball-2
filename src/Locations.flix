@@ -55,6 +55,16 @@ mod Locations {
         y = -goalWidth() / 2.0
     }
 
+    pub def goalCenterW(): Location = {
+        x = -pitchLength() / 2.0,
+        y = 0.0
+    }
+
+    pub def goalCenterE(): Location = {
+        x = pitchLength() / 2.0,
+        y = 0.0
+    }
+
     // back-of-goal corners: goalDepth behind each goal line, at ±goalWidth/2
     pub def goalBackNE(): Location = {
         x =  pitchLength() / 2.0 + goalDepth(),

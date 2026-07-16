@@ -120,15 +120,32 @@ def init(): MarshallBox \ IO = {
     // let red  = List.range(12, 23) |> List.map(n -> mkOne(n, Team.Red));
     // let players = List.toMap(List.append(blue, red));
 
-    let bodyR = mkPlayer();
-    bodyR.translate(randomXWest(), randomY());
-    world.addBody(bodyR);
-    let bodyB = mkPlayer();
-    bodyB.translate(randomXEast(), randomY());
-    world.addBody(bodyB);
-    let playerR = (Team.Red, bodyR, Bots.shootEast);
-    let playerB = (Team.Blue, bodyB, Bots.defendEast);
-    let players = Map#{"Red" => playerR, "Blue" => playerB};
+    let bodySR = mkPlayer();
+    bodySR.translate(randomXWest(), randomY());
+    world.addBody(bodySR);
+
+    let bodyGR = mkPlayer();
+    bodyGR.translate(randomXWest(), randomY());
+    world.addBody(bodyGR);
+
+    let bodySB = mkPlayer();
+    bodySB.translate(randomXEast(), randomY());
+    world.addBody(bodySB);
+
+    let bodyGB = mkPlayer();
+    bodyGB.translate(randomXEast(), randomY());
+    world.addBody(bodyGB);
+
+    let playerSR = (Team.Red, bodySR, Bots.circleAndShootEast);
+    let playerGR = (Team.Red, bodyGR, Bots.defendWest);
+    let playerSB = (Team.Blue, bodySB, Bots.circleAndShootWest);
+    let playerGB = (Team.Blue, bodyGB, Bots.defendEast);
+    let players = Map#{
+        "Red Striker" => playerSR,
+        "Blue Striker" => playerSB,
+        "Red Goalie" => playerGR,
+        "Blue Goalie" => playerGB
+    };
 
     { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}
 }

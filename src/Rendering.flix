@@ -26,15 +26,16 @@ mod Rendering {
         g.setColor(Color.WHITE);
 
         // outer rectangle
-        let cornerX = -pitchLength() / 2.0;
-        let cornerY = -pitchWidth() / 2.0;
+        let { x = cornerX, y = cornerY } = Locations.cornerSW();
         g.draw(new Rectangle2D$Double(cornerX, cornerY, pitchLength(), pitchWidth()));
 
         // halfway line
         g.draw(new Line2D$Double(0.0, -pitchWidth() / 2.0 , 0.0, pitchWidth() / 2.0));
 
         // center circle
-        g.draw(new Ellipse2D$Double(-9.15, -9.15, 18.30, 18.30));
+        let radius = Constants.centerCircleRadius();
+        let { x = x0, y = y0 } = Locations.center();
+        g.draw(new Ellipse2D$Double(x0 - radius, y0 - radius, radius * 2.0, radius * 2.0));
 
         // penalty boxes: 16.5 * 40.32
         g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 , -20.16, 16.5, 40.32));

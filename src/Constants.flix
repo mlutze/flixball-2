@@ -1,10 +1,26 @@
 mod Constants {
     import java.lang.Math
 
-    // pitch dimensions in meters
-    pub def pitchLength(): Float64 = 100.0
+    // pitch dimensions in meters; taken from https://commons.wikimedia.org/wiki/File:Association_Football_field_diagram_-en.svg
+    pub def pitchLength(): Float64 = 105.0
 
-    pub def pitchWidth(): Float64 = 50.0
+    pub def pitchWidth(): Float64 = 70.0
+
+    pub def centerCircleRadius(): Float64 = 9.15
+
+    pub def goalWidth(): Float64 = 7.32
+
+    pub def goalAreaWidth(): Float64 = ???
+
+    pub def goalAreaDepth(): Float64 = ???
+
+    pub def penaltyBoxWidth(): Float64 = ???
+
+    pub def penaltyBoxDepth(): Float64 = ???
+
+    pub def penaltySpotDist(): Float64 = ???
+
+    pub def penaltyArcDist(): Float64 = ???
 
     // body radii in meters
     pub def ballRadius(): Float64 = 0.11

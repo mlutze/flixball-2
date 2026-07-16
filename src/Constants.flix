@@ -10,17 +10,23 @@ mod Constants {
 
     pub def goalWidth(): Float64 = 7.32
 
-    pub def goalAreaWidth(): Float64 = ???
+    // net depth: arbitrary rendering value, not a FIFA spec
+    pub def goalDepth(): Float64 = 2.0
 
-    pub def goalAreaDepth(): Float64 = ???
+    pub def goalAreaWidth(): Float64 = 18.32
 
-    pub def penaltyBoxWidth(): Float64 = ???
+    pub def goalAreaDepth(): Float64 = 5.5
 
-    pub def penaltyBoxDepth(): Float64 = ???
+    pub def penaltyBoxWidth(): Float64 = 40.32
 
-    pub def penaltySpotDist(): Float64 = ???
+    pub def penaltyBoxDepth(): Float64 = 16.5
 
-    pub def penaltyArcDist(): Float64 = ???
+    pub def penaltySpotDist(): Float64 = 11.0
+
+    // rendering size of the painted penalty spot; not a FIFA spec
+    pub def penaltySpotRadius(): Float64 = 0.15
+
+    pub def penaltyArcDist(): Float64 = 9.15
 
     // body radii in meters
     pub def ballRadius(): Float64 = 0.11

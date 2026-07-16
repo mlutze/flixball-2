@@ -5,16 +5,29 @@ mod Rendering {
     import java.awt.Graphics2D
     import java.awt.RenderingHints
     import java.awt.geom.AffineTransform
+    import java.awt.geom.Arc2D
     import java.awt.geom.Arc2D$Double
     import java.awt.geom.Ellipse2D$Double
     import java.awt.geom.Line2D
     import java.awt.geom.Line2D$Double
     import java.awt.geom.Rectangle2D$Double
 
+    import java.lang.Math
+
     use Constants.pitchLength
     use Constants.pitchWidth
     use Constants.playerRadius
     use Constants.ballRadius
+    use Constants.goalWidth
+    use Constants.goalDepth
+    use Constants.goalAreaWidth
+    use Constants.goalAreaDepth
+    use Constants.penaltyBoxWidth
+    use Constants.penaltyBoxDepth
+    use Constants.penaltySpotDist
+    use Constants.penaltySpotRadius
+    use Constants.penaltyArcDist
+    use Constants.centerCircleRadius
 
     pub def renderBackground(g: Graphics2D): Unit \ IO = {
         // grass: just do a huge background
@@ -33,37 +46,47 @@ mod Rendering {
         g.draw(new Line2D$Double(0.0, -pitchWidth() / 2.0 , 0.0, pitchWidth() / 2.0));
 
         // center circle
-        let radius = Constants.centerCircleRadius();
+        let cRadius = centerCircleRadius();
         let { x = x0, y = y0 } = Locations.center();
-        g.draw(new Ellipse2D$Double(x0 - radius, y0 - radius, radius * 2.0, radius * 2.0));
+        g.draw(new Ellipse2D$Double(x0 - cRadius, y0 - cRadius, cRadius * 2.0, cRadius * 2.0));
 
-        // penalty boxes: 16.5 * 40.32
-        g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 , -20.16, 16.5, 40.32));
-        g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 16.5, -20.16, 16.5, 40.32));
+        // penalty boxes
+        let { x = pbxW, y = pbyW } = Locations.penaltyBoxW();
+        let { x = pbxE, y = pbyE } = Locations.penaltyBoxE();
+        g.draw(new Rectangle2D$Double(pbxW, pbyW, penaltyBoxDepth(), penaltyBoxWidth()));
+        g.draw(new Rectangle2D$Double(pbxE, pbyE, penaltyBoxDepth(), penaltyBoxWidth()));
 
-        // goal areas (6-yard boxes): 5.5 deep * 18.32 wide
-        g.draw(new Rectangle2D$Double(-pitchLength() / 2.0, -9.16, 5.5, 18.32));
-        g.draw(new Rectangle2D$Double(pitchLength() / 2.0 - 5.5, -9.16, 5.5, 18.32));
+        // goal areas (6-yard boxes)
+        let { x = gaxW, y = gayW } = Locations.goalAreaW();
+        let { x = gaxE, y = gayE } = Locations.goalAreaE();
+        g.draw(new Rectangle2D$Double(gaxW, gayW, goalAreaDepth(), goalAreaWidth()));
+        g.draw(new Rectangle2D$Double(gaxE, gayE, goalAreaDepth(), goalAreaWidth()));
 
-        // goals: 2 deep * 7.32 wide, drawn behind the goal line, with a net-like crosshatch
-        g.draw(new Rectangle2D$Double(-pitchLength() / 2.0 - 2.0, -3.66, 2.0, 7.32));
-        g.draw(new Rectangle2D$Double(pitchLength() / 2.0, -3.66, 2.0, 7.32));
-        crosshatch(g, -pitchLength() / 2.0 - 2.0, -3.66, 2.0, 7.32);
-        crosshatch(g, pitchLength() / 2.0, -3.66, 2.0, 7.32);
+        // goals: drawn behind the goal line, with a net-like crosshatch
+        let { x = gxW, y = gyW } = Locations.goalW();
+        let { x = gxE, y = gyE } = Locations.goalE();
+        g.draw(new Rectangle2D$Double(gxW, gyW, goalDepth(), goalWidth()));
+        g.draw(new Rectangle2D$Double(gxE, gyE, goalDepth(), goalWidth()));
+        crosshatch(g, gxW, gyW, goalDepth(), goalWidth());
+        crosshatch(g, gxE, gyE, goalDepth(), goalWidth());
 
-        // penalty spots: 11 m from goal line, filled dot
-        g.fill(new Ellipse2D$Double(-pitchLength() / 2.0 + 11.0 - 0.15, -0.15, 0.30, 0.30));
-        g.fill(new Ellipse2D$Double(pitchLength() / 2.0 - 11.0 - 0.15, -0.15, 0.30, 0.30));
+        // penalty spots
+        let dotSize = penaltySpotRadius() * 2.0;
+        let { x = psxW, y = psyW } = Locations.penaltySpotW();
+        let { x = psxE, y = psyE } = Locations.penaltySpotE();
+        g.fill(new Ellipse2D$Double(psxW - penaltySpotRadius(), psyW - penaltySpotRadius(), dotSize, dotSize));
+        g.fill(new Ellipse2D$Double(psxE - penaltySpotRadius(), psyE - penaltySpotRadius(), dotSize, dotSize));
 
-        // penalty arcs: radius 9.15 m from penalty spot, portion outside the penalty box.
-        // half-angle to where the arc meets the front of the penalty box: acos(5.5/9.15) ≈ 53°
-        let leftSpotX = -pitchLength() / 2.0 + 11.0;
-        let rightSpotX = pitchLength() / 2.0 - 11.0;
-        // Arc2D.OPEN = 0
-        // left arc opens toward +x: sweep from -53° through 0° to +53°
-        g.draw(new Arc2D$Double(leftSpotX - 9.15, -9.15, 18.30, 18.30, -53.0, 106.0, 0));
-        // right arc opens toward -x: sweep from 127° through 180° to 233°
-        g.draw(new Arc2D$Double(rightSpotX - 9.15, -9.15, 18.30, 18.30, 127.0, 106.0, 0))
+        // penalty arcs: radius penaltyArcDist from penalty spot, portion outside the penalty box.
+        // half-angle is where the arc meets the front of the penalty box.
+        let aRadius = penaltyArcDist();
+        let aDiameter = aRadius * 2.0;
+        let halfChord = penaltyBoxDepth() - penaltySpotDist();
+        let halfAngleDeg = unsafe IO { Math.toDegrees(Math.acos(halfChord / aRadius)) };
+        let fullAngleDeg = 2.0 * halfAngleDeg;
+        // west arc opens toward +x (through 0°); east arc opens toward -x (through 180°)
+        g.draw(new Arc2D$Double(psxW - aRadius, psyW - aRadius, aDiameter, aDiameter, -halfAngleDeg, fullAngleDeg, Arc2D.OPEN));
+        g.draw(new Arc2D$Double(psxE - aRadius, psyE - aRadius, aDiameter, aDiameter, 180.0 - halfAngleDeg, fullAngleDeg, Arc2D.OPEN))
     }
 
     pub def renderPlayer(g: Graphics2D, player: Player): Unit \ IO = {

@@ -12,6 +12,9 @@ mod Rendering {
     import java.awt.geom.Line2D$Double
     import java.awt.geom.Rectangle2D$Double
 
+    import java.awt.RadialGradientPaint
+    import java.awt.geom.Point2D$Double
+
     import java.lang.Math
 
     use Constants.pitchLength
@@ -98,15 +101,37 @@ mod Rendering {
             case Team.Blue => Color.BLUE
         };
         g.setColor(color);
-        g.fill(circle)
+        g.fill(circle);
+        g.setColor(Color.BLACK);
+        g.setStroke(new BasicStroke(0.05f32));
+        g.draw(circle)
     }
 
     pub def renderBall(g: Graphics2D, location: Location): Unit \ IO = {
+
+        // highlight
+        let hlRadius = ballRadius() * 5.0;
+        let hlColor = Color.YELLOW;
+        let transHlColor = new Color(hlColor.getRed(), hlColor.getGreen(), hlColor.getBlue(), 0);
+
+        let hlCornerX = location#x - hlRadius;
+        let hlCornerY = location#y - hlRadius;
+        let hlCircle = new Ellipse2D$Double(hlCornerX, hlCornerY, hlRadius * 2.0, hlRadius * 2.0);
+        let center = new Point2D$Double(location#x, location#y);
+        g.setPaint(new RadialGradientPaint(center, Float64.truncateToFloat32(hlRadius), Vector#{0.0f32, 1.0f32}, Vector#{hlColor, transHlColor}));
+        g.fill(hlCircle);
+
+        // ball fill
         let cornerX = location#x - ballRadius();
         let cornerY = location#y - ballRadius();
         let circle = new Ellipse2D$Double(cornerX, cornerY, ballRadius() * 2.0, ballRadius() * 2.0);
         g.setColor(Color.WHITE);
-        g.fill(circle)
+        g.fill(circle);
+
+        // ball border
+        g.setColor(Color.BLACK);
+        g.setStroke(new BasicStroke(0.05f32));
+        g.draw(circle)
     }
 
     pub def renderPitch(g: Graphics2D, pitch: Pitch): Unit \ IO = {

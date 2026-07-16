@@ -136,9 +136,9 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    let playerSR = (Team.Red, bodySR, Bots.shoot4East);
+    let playerSR = (Team.Red, bodySR, Bots.closeCircleAndShootEast);
     let playerGR = (Team.Red, bodyGR, Bots.defendWest);
-    let playerSB = (Team.Blue, bodySB, Bots.shoot4West);
+    let playerSB = (Team.Blue, bodySB, Bots.closeCircleAndShootWest);
     let playerGB = (Team.Blue, bodyGB, Bots.defendEast);
     let players = Map#{
         "Red Striker" => playerSR,

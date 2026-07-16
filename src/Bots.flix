@@ -161,6 +161,23 @@ mod Bots {
         }
     }
 
+    pub def closeCircleAndShootEast(pitch: Pitch, me: Player): Direction = {
+        closeCircleAndShoot(Locations.goalCenterE(), pitch, me)
+    }
+
+    pub def closeCircleAndShootWest(pitch: Pitch, me: Player): Direction = {
+        closeCircleAndShoot(Locations.goalCenterW(), pitch, me)
+    }
+
+    def closeCircleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let disp = Displacement.fromTo(pitch#ballLocation, me#location);
+        if (Displacement.distance(disp) > 10.0) {
+            runAtBall(pitch, me)
+        } else {
+            circleAndShoot(goal, pitch, me)
+        }
+    }
+
     pub def circleAndShootEast(pitch: Pitch, me: Player): Direction = {
         circleAndShoot(Locations.goalCenterE(), pitch, me)
     }
@@ -171,15 +188,26 @@ mod Bots {
 
     def circleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
         // runs in a circle that is tangent to the proper shooting angle
+        // bug: this isn't quite the proper shooting angle because it does not take into account player / ball radius
 
+        let target = contactPoint(goal, pitch);
         let ballToGoal = Direction.fromTo(pitch#ballLocation, goal);
-        let meToBall = Direction.fromTo(me#location, pitch#ballLocation);
+        let meToTarget = Direction.fromTo(me#location, target);
 
-        let theta = Direction.angle(ballToGoal, meToBall);
-        let adjustedTheta = theta * 2.0;
+        let theta = Direction.angle(ballToGoal, meToTarget);
+        let adjustedTheta = theta * 1.0;
         let boundedTheta = adjustedTheta |> Float64.max(-Math.PI / 2.0) |> Float64.min(Math.PI / 2.0);
 
-        Direction.addAngle(meToBall, boundedTheta)
+        Direction.addAngle(meToTarget, boundedTheta)
+    }
+
+    // the location one must be to strike the ball such that it will enter the goal (ignoring momentum)
+    def contactPoint(goal: Location, pitch: Pitch): Location = {
+        let ball = pitch#ballLocation;
+        let goalToBall = Direction.fromTo(goal, ball);
+        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
+        let ballTargetDisplacement = Displacement.inDirection(goalToBall, centerCenterDist);
+        Displacement.apply(ballTargetDisplacement, ball)
     }
 
     pub def defendEast(pitch: Pitch, me: Player): Direction = {

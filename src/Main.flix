@@ -102,8 +102,10 @@ def init(): MarshallBox \ IO = {
     addGoalWalls(world);
 
     // random point strictly inside the pitch, leaving room for the player radius
-    let randomX = () -> (Math.random() - 0.5) * (pitchLength() - 2.0 * playerRadius());
+    // let randomX = () -> (Math.random() - 0.5) * (pitchLength() - 2.0 * playerRadius());
     let randomY = () -> (Math.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius());
+    let randomXEast = () -> Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius());
+    let randomXWest = () -> -Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius());
     // let bots = Vector#{Bots.runAtBall, Bots.runFromBall, Bots.wander, Bots.interceptBall, Bots.stayStill, Bots.defendOwnGoal};
     // let randomBot = () -> Utils.randomChoice(bots);
 
@@ -119,13 +121,13 @@ def init(): MarshallBox \ IO = {
     // let players = List.toMap(List.append(blue, red));
 
     let bodyR = mkPlayer();
-    bodyR.translate(randomX(), randomY());
+    bodyR.translate(randomXWest(), randomY());
     world.addBody(bodyR);
     let bodyB = mkPlayer();
-    bodyB.translate(randomX(), randomY());
+    bodyB.translate(randomXEast(), randomY());
     world.addBody(bodyB);
     let playerR = (Team.Red, bodyR, Bots.shootEast);
-    let playerB = (Team.Blue, bodyB, Bots.shootWest);
+    let playerB = (Team.Blue, bodyB, Bots.defendEast);
     let players = Map#{"Red" => playerR, "Blue" => playerB};
 
     { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}

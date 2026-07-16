@@ -64,4 +64,29 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
+    pub def defendEast(pitch: Pitch, me: Player): Direction = {
+        defend(Locations.goalCenterE(), pitch, me)
+    }
+
+    pub def defendWest(pitch: Pitch, me: Player): Direction = {
+        defend(Locations.goalCenterW(), pitch, me)
+    }
+
+    // stay 1 meter in front of goal
+    // on the line between the center of the goal and the ball
+    pub def defend(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let minY = Locations.goalpostSE()#y;
+        let maxY = Locations.goalpostNE()#y;
+        let targetY = pitch#ballLocation#y |> Float64.max(minY) |> Float64.min(maxY);
+        let goalToBall = Direction.fromTo(goal, pitch#ballLocation);
+        let disp = Displacement.inDirection(goalToBall, 1.0);
+        let baseTarget = Displacement.apply(disp, goal);
+        let targetX = baseTarget#x;
+        let target = {
+            x = targetX,
+            y = targetY
+        };
+        Direction.fromTo(me#location, target)
+    }
+
 }

@@ -147,9 +147,10 @@ def formatTimeMs(ms: Int32): String = {
 def executeAi(box: MarshallBox): Unit \ IO = {
     let pitch = Marshall.makePitch(box);
     foreach (
-        (name, (_, body, bot)) <- box#players
+        (name, (team, body, bot)) <- box#players
     ) {
-        let dir = bot(pitch, name);
+        let me = Marshall.makePlayer(body, name, team);
+        let dir = bot(pitch, me);
         let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
         discard body.applyForce(force_)
     }

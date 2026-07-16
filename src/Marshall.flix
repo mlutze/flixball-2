@@ -11,7 +11,7 @@ mod Marshall {
         { dx = velocity.x, dy = velocity.y }
     }
 
-    def makePlayer(body: Body, name: String, team: Team): Player \ IO = {
+    pub def makePlayer(body: Body, name: String, team: Team): Player \ IO = {
         {
             name = name,
             team = team,

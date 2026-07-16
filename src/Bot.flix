@@ -1,1 +1,1 @@
-type alias Bot = (Pitch, String) -> Direction
+type alias Bot = (Pitch, Player) -> Direction

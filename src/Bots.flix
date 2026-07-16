@@ -1,13 +1,8 @@
 mod Bots {
     import java.lang.Math
-    use Constants.pitchLength
 
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
-        let desiredVelocity = {
-            dx = pitch#ballLocation#x - me#location#x,
-            dy = pitch#ballLocation#y - me#location#y
-        };
-        Velocity.toDirection(desiredVelocity)
+        Direction.fromTo(me#location, pitch#ballLocation)
     }
 
     // stands still forever
@@ -17,45 +12,37 @@ mod Bots {
 
     // runs away from the ball
     pub def runFromBall(pitch: Pitch, me: Player): Direction = {
-        let desiredVelocity = {
-            dx = me#location#x - pitch#ballLocation#x,
-            dy = me#location#y - pitch#ballLocation#y
-        };
-        Velocity.toDirection(desiredVelocity)
+        Direction.fromTo(pitch#ballLocation, me#location)
     }
 
     // picks a random direction each tick — jittery but fun as a baseline
     pub def wander(_pitch: Pitch, _me: Player): Direction = {
         let dx = unsafe IO { Math.random() - 0.5 };
         let dy = unsafe IO { Math.random() - 0.5 };
-        Velocity.toDirection({ dx = dx, dy = dy })
+        Displacement.getDirection({ dx = dx, dy = dy })
     }
 
     // chases where the ball will be ~0.5 s from now (uses ball velocity)
     pub def interceptBall(pitch: Pitch, me: Player): Direction = {
         let lookahead = 0.5;
-        let futureX = pitch#ballLocation#x + pitch#ballVelocity#dx * lookahead;
-        let futureY = pitch#ballLocation#y + pitch#ballVelocity#dy * lookahead;
-        let desiredVelocity = {
-            dx = futureX - me#location#x,
-            dy = futureY - me#location#y
+        let future = {
+            x = pitch#ballLocation#x + pitch#ballVelocity#dx * lookahead,
+            y = pitch#ballLocation#y + pitch#ballVelocity#dy * lookahead
         };
-        Velocity.toDirection(desiredVelocity)
+        Direction.fromTo(me#location, future)
     }
 
     // stays halfway between own goal and the ball (Blue defends left, Red defends right)
     pub def defendOwnGoal(pitch: Pitch, me: Player): Direction = {
-        let ownGoalX = match me#team {
-            case Team.Blue => -pitchLength() / 2.0
-            case Team.Red  =>  pitchLength() / 2.0
+        let ownGoal = match me#team {
+            case Team.Blue => Locations.goalCenterW()
+            case Team.Red  => Locations.goalCenterE()
         };
-        let targetX = (ownGoalX + pitch#ballLocation#x) / 2.0;
-        let targetY = pitch#ballLocation#y / 2.0;
-        let desiredVelocity = {
-            dx = targetX - me#location#x,
-            dy = targetY - me#location#y
+        let target = {
+            x = (ownGoal#x + pitch#ballLocation#x) / 2.0,
+            y = pitch#ballLocation#y / 2.0
         };
-        Velocity.toDirection(desiredVelocity)
+        Direction.fromTo(me#location, target)
     }
 
     pub def shootEast(pitch: Pitch, me: Player): Direction = {

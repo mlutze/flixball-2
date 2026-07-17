@@ -31,4 +31,24 @@ mod Direction {
             uy = d#ux * s + d#uy * c
         }
     }
+
+    pub def north(): Direction = {
+        ux = 0.0,
+        uy = 1.0
+    }
+
+    pub def south(): Direction = {
+        ux = 0.0,
+        uy = -1.0
+    }
+
+    pub def east(): Direction = {
+        ux = 1.0,
+        uy = 0.0
+    }
+
+    pub def west(): Direction = {
+        ux = -1.0,
+        uy = 0.0
+    }
 }

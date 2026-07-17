@@ -175,10 +175,10 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkStatelessBot(Bots.avoidGoalieEast) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.avoidGoalieEast) };
     // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
     // let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
-    let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkStatelessBot(Bots.defendEast) };
+    let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
         "Red Striker" => playerSR,
         // "Blue Striker" => playerSB,
@@ -319,13 +319,11 @@ def getAiDirections(box: MarshallBox): Map[String, Direction] \ IO = {
     let pitch = Marshall.makePitch(box);
     def getAiForce(name, physPlayer): Direction = {
         let me = Marshall.makePlayer(name, physPlayer);
-        let state = Ref.get(physPlayer#state);
         run {
-            let (state1, dir) = physPlayer#bot(state, pitch, me);
-            Ref.put(state1, physPlayer#state);
-            dir
+            physPlayer#bot(pitch, me)
         } with Logger.runWithIO
             with Random.runWithIO
+            with BotState.runWithRef(physPlayer#state)
             
     };
     box#players |> Map.mapWithKey(getAiForce)

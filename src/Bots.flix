@@ -1,19 +1,10 @@
 mod Bots {
     import java.lang.Math
 
-    pub def mkStatefulBot(f: StatefulPrebot[ef, s]): Bot with BotState[s] = {
-        (byte, pitch, player) -> 
-            let state = BotState.fromByte(byte);
-            let (state1, dir) = f(state, pitch, player);
-            let byte1 = BotState.toByte(state1);
-            eidentity((byte1, dir))
+    pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
+        (pitch, player) -> eidentity(f(pitch, player))
     }
 
-    pub def mkStatelessBot(f: StatelessPrebot[ef]): Bot = {
-        (byte, pitch, player) ->
-            let dir = f(pitch, player);
-            eidentity((byte, dir))
-    }
 
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
         Direction.fromTo(me#location, pitch#ballLocation)
@@ -201,16 +192,16 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
-    pub def avoidGoalieEast(pitch: Pitch, me: Player): Direction = {
+    pub def avoidGoalieEast(pitch: Pitch, me: Player): Direction \ BotState = {
         avoidGoalie(Locations.goalpostNE(), Locations.goalpostSE(), pitch, me)
     }
 
-    pub def avoidGoalieWest(pitch: Pitch, me: Player): Direction = {
+    pub def avoidGoalieWest(pitch: Pitch, me: Player): Direction \ BotState = {
         avoidGoalie(Locations.goalpostNW(), Locations.goalpostSW(), pitch, me)
     }
 
     // see what edge the goalie is closer to and kick toward the opposite edge of the goal
-    pub def avoidGoalie(goalpostN: Location, goalpostS: Location, pitch: Pitch, me: Player): Direction = {
+    pub def avoidGoalie(goalpostN: Location, goalpostS: Location, pitch: Pitch, me: Player): Direction \ BotState = {
         let ball = pitch#ballLocation;
 
         // We assume the goalie is the closest player to the goal
@@ -222,12 +213,26 @@ mod Bots {
         // See which side the goalie is closer to
         let distN = Location.distance(goalie#location, goalpostN);
         let distS = Location.distance(goalie#location, goalpostS);
-        let goal = if (distN < distS) {
-            // Goalie is north; aim south
-            goalpostS
+        
+        // if the goalie is significantly closer to the north side, then we will look south
+        let newLookingNorth = if (distS - distN > 2.0) {
+            false
+        } else if (distN - distS > 2.0){
+            true
         } else {
-            // Goalie is south; aim north
-            goalpostN
+            // if it's in the middle then we don't change
+            BotState.getState()
+        };
+        BotState.setState(newLookingNorth);
+
+        let goal = if (newLookingNorth) {
+            // Goalie is north; aim south (adding space for the ball)
+            let disp = Displacement.inDirection(Direction.north(), Constants.ballRadius());
+            Displacement.apply(disp, goalpostS)
+        } else {
+            // Goalie is south; aim north (adding space for the ball)
+            let disp = Displacement.inDirection(Direction.south(), Constants.ballRadius());
+            Displacement.apply(disp, goalpostN)
         };
 
         let goalBallDir = Direction.fromTo(goal, ball);

@@ -25,6 +25,7 @@ import org.dyn4j.geometry.Vector2
 import org.dyn4j.world.World
 import java.awt.BorderLayout
 import javax.swing.JLabel
+import javax.swing.JCheckBox
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -53,6 +54,8 @@ def main(): Unit \ IO = {
     timePanel.add(timeLabel);
     timeLabel.setText("0.0");
 
+    let forcesRef = Ref.fresh(Static, false);
+
     let pitchPanel = new JPanel {
         def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
             // super.paintComponent(g);
@@ -71,7 +74,11 @@ def main(): Unit \ IO = {
             g2.setStroke(new BasicStroke(0.05f32));
 
             let pitch = Marshall.makePitch(marshallBox);
-            let dirs = getAiDirections(marshallBox);
+            let dirs = if (Ref.get(forcesRef)) {
+                Some(getAiDirections(marshallBox))
+            } else {
+                None
+            };
             renderPitch(g2, pitch, dirs)
         }
     };
@@ -81,6 +88,7 @@ def main(): Unit \ IO = {
     let buttonPanel = new JPanel();
     let startButton = new JButton("Start");
     let resetButton = new JButton("Reset");
+    let forcesButton = new JButton("Show Forces");
 
     def onClickStartPause(_): Unit = {
         if (gameLoop.isRunning()) {
@@ -101,8 +109,25 @@ def main(): Unit \ IO = {
     };
 
     resetButton.addActionListener(Utils.mkActionListener(onClickReset));
+
+    def onClickForces(_): Unit = {
+        let nowShowing = Ref.get(forcesRef);
+        if (nowShowing) {
+            Ref.put(false, forcesRef);
+            forcesButton.setText("Show Forces");
+            pitchPanel.repaint()
+        } else {
+            Ref.put(true, forcesRef);
+            forcesButton.setText("Hide Forces");
+            pitchPanel.repaint()
+        }
+    };
+
+    forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
+
     buttonPanel.add(startButton);
     buttonPanel.add(resetButton);
+    buttonPanel.add(forcesButton);
 
     let frame = new JFrame("Flixball 2");
     frame.setSize(1000, 600);

@@ -165,17 +165,19 @@ mod Rendering {
         g.draw(circle)
     }
 
-    pub def renderPitch(g: Graphics2D, pitch: Pitch, dirs: Map[String, Direction]): Unit \ IO = {
+    // renders the player forces if dirsOpt is not None
+    pub def renderPitch(g: Graphics2D, pitch: Pitch, dirsOpt: Option[Map[String, Direction]]): Unit \ IO = {
         renderBackground(g);
         foreach (
             player <- Map.valuesOf(pitch#players)
         ) {
-            let dir = match Map.get(player#name, dirs) {
-                case None => unreachable!()
-                case Some(d) => d
-            };
             renderPlayer(g, player);
-            renderForce(g, player#location, dir)
+            match dirsOpt {
+                case None => ()
+                case Some(dirs) =>
+                    let dir = Utils.unsafeGetMap(player#name, dirs);
+                    renderForce(g, player#location, dir)
+            }
         };
         renderBall(g, pitch#ballLocation)
     }

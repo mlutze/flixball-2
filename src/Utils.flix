@@ -31,4 +31,15 @@ mod Utils {
             def actionPerformed(_this: ActionListener, e: ActionEvent): Unit \ ef = f(e)
         }
     }
+
+    pub def unsafeGetOpt(opt: Option[a]): a = {
+        match opt {
+            case None => unreachable!()
+            case Some(x) => x
+        }
+    }
+
+    pub def unsafeGetMap(key: k, map: Map[k, v]): v with Order[k] = {
+        unsafeGetOpt(Map.get(key, map))
+    }
 }

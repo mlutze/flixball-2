@@ -28,7 +28,10 @@ mod Marshall {
         { 
             players = players,
             ballLocation = ballLocation,
-            ballVelocity = ballVelocity
+            ballVelocity = ballVelocity,
+            redScore = Ref.get(box#redScore),
+            blueScore = Ref.get(box#blueScore),
+            state = Ref.get(box#state)
         }
     }
 

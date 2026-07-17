@@ -49,10 +49,20 @@ use Rendering.renderPitch
 def main(): Unit \ IO = {
     let marshallBox = init();
 
-    let timePanel = new JPanel();
+    let scorePanel = new JPanel();
     let timeLabel = new JLabel();
-    timePanel.add(timeLabel);
     timeLabel.setText("0.0");
+    
+    let redScoreLabel = new JLabel();
+    redScoreLabel.setForeground(Color.RED);
+    redScoreLabel.setText("0");
+    let blueScoreLabel = new JLabel();
+    blueScoreLabel.setForeground(Color.BLUE);
+    blueScoreLabel.setText("0");
+
+    scorePanel.add(redScoreLabel);
+    scorePanel.add(timeLabel);
+    scorePanel.add(blueScoreLabel);
 
     let forcesRef = Ref.fresh(Static, false);
 
@@ -83,7 +93,7 @@ def main(): Unit \ IO = {
         }
     };
 
-    let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel);
+    let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
 
     let buttonPanel = new JPanel();
     let startButton = new JButton("Start");
@@ -134,7 +144,7 @@ def main(): Unit \ IO = {
     frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.add(pitchPanel, BorderLayout.CENTER);
-    frame.add(timePanel, BorderLayout.NORTH);
+    frame.add(scorePanel, BorderLayout.NORTH);
     frame.add(buttonPanel, BorderLayout.SOUTH);
     frame.setVisible(true)
 }
@@ -183,7 +193,9 @@ def init(): MarshallBox \ IO = {
         ball = ball,
         timeMs = Ref.fresh(Static, -Constants.pregameMs()),
         state = Ref.fresh(Static, GameState.PreGame({ remainingMs = Constants.pregameMs() })),
-        preGameJunk = preGameJunk
+        preGameJunk = preGameJunk,
+        redScore = Ref.fresh(Static, 0),
+        blueScore = Ref.fresh(Static, 0)
     }
 }
 
@@ -220,7 +232,7 @@ def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = 
     timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
 }
 
-def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer \ IO = {
+def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel): Timer \ IO = {
     let deltaTs = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
@@ -237,8 +249,30 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer
                     Ref.put(GameState.Play, box#state);
                     MarshallBox.clearJunk(box)
                 }
-            case GameState.Play => ()
-                // TODO check for goal
+            case GameState.Play =>
+                match getBallLocationClass(box) {
+                    // red has scored
+                    case LocationClass.EastGoal =>
+                        box#redScore |> Ref.transform(s -> s + 1);
+                        let newState = GameState.PostGoal({
+                            remainingMs = Constants.postGoalMs(),
+                            team = Team.Red
+                        });
+                        Ref.put(newState, box#state)
+
+                    // blue has scored
+                    case LocationClass.WestGoal =>
+                        box#blueScore |> Ref.transform(s -> s + 1);
+                        let newState = GameState.PostGoal({
+                            remainingMs = Constants.postGoalMs(),
+                            team = Team.Blue
+                        });
+                        Ref.put(newState, box#state)
+
+                    // no one scored, nothing to do
+                    case LocationClass.InBounds => ()
+                    case LocationClass.OutOfBounds => ()
+                }
             case GameState.PostGoal({ remainingMs | _ }) =>
                 if (remainingMs < 0) {
                     Ref.put(GameState.Play, box#state)
@@ -247,7 +281,9 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer
         };
         box#world.step(1, deltaTs);
         pitchPanel.repaint();
-        timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
+        timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
+        redScoreLabel.setText("${Ref.get(box#redScore)}");
+        blueScoreLabel.setText("${Ref.get(box#blueScore)}")
     };
 
     new Timer(deltaTms, Utils.mkActionListener(go))
@@ -322,11 +358,12 @@ def getBallLocationClass(box: MarshallBox): LocationClass \ IO = {
         Constants.goalDepth(),
         Constants.goalWidth()
     );
+    let ballBounds = ballShape.getBounds2D();
     if (ballShape.intersects(pitchRectangle)) {
         LocationClass.InBounds
-    } else if (ballShape.intersects(eastGoalRectangle)) {
+    } else if (eastGoalRectangle.contains(ballBounds)) {
         LocationClass.EastGoal
-    } else if (ballShape.intersects(westGoalRectangle)) {
+    } else if (westGoalRectangle.contains(ballBounds)) {
         LocationClass.WestGoal
     } else {
         LocationClass.OutOfBounds

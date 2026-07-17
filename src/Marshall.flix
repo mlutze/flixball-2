@@ -11,19 +11,18 @@ mod Marshall {
         { dx = velocity.x, dy = velocity.y }
     }
 
-    pub def makePlayer(body: Body, name: String, team: Team): Player \ IO = {
-        {
-            name = name,
-            team = team,
-            location = getLocation(body),
-            velocity = getVelocity(body)
-        }
+    pub def makePlayer(name: String, p: PhysicsPlayer): Player \ IO = {
+        team = p#team,
+        name = name,
+        number = p#number,
+        location = getLocation(p#body),
+        velocity = getVelocity(p#body)
     }
 
     pub def makePitch(box: MarshallBox): Pitch \ IO = {
         let players = box#players |> Map.mapWithKey(
-            name -> match (team, body, _) ->
-                makePlayer(body, name, team)
+            name -> match physPlayer ->
+                makePlayer(name, physPlayer)
         );
         let ballLocation = getLocation(box#ball);
         let ballVelocity = getVelocity(box#ball);

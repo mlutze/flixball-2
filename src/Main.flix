@@ -136,10 +136,10 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    let playerSR = (Team.Red, bodySR, Bots.closeCircleAndShootEast);
-    let playerGR = (Team.Red, bodyGR, Bots.defendWest);
-    let playerSB = (Team.Blue, bodySB, Bots.closeCircleAndShootWest);
-    let playerGB = (Team.Blue, bodyGB, Bots.defendEast);
+    let playerSR = { number = 1, team = Team.Red, body = bodySR, bot = Bots.closeCircleAndShootEast };
+    let playerGR = { number = 2, team = Team.Red, body = bodyGR, bot = Bots.defendWest };
+    let playerSB = { number = 3, team = Team.Blue, body = bodySB, bot = Bots.closeCircleAndShootWest };
+    let playerGB = { number = 4, team = Team.Blue, body = bodyGB, bot = Bots.defendEast };
     let players = Map#{
         "Red Striker" => playerSR,
         "Blue Striker" => playerSB,
@@ -158,7 +158,7 @@ def startGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit
         executeAi(box);
         adjustDampening(box);
         MarshallBox.addTimeMs(deltaTms, box);
-        box#world.step(1, deltaTs);   // dyn4j: (numSteps, elapsedTime)
+        box#world.step(1, deltaTs);
         pitchPanel.repaint();
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
     };
@@ -175,12 +175,12 @@ def formatTimeMs(ms: Int32): String = {
 def executeAi(box: MarshallBox): Unit \ IO = {
     let pitch = Marshall.makePitch(box);
     foreach (
-        (name, (team, body, bot)) <- box#players
+        (name, physPlayer) <- box#players
     ) {
-        let me = Marshall.makePlayer(body, name, team);
-        let dir = bot(pitch, me);
+        let me = Marshall.makePlayer(name, physPlayer);
+        let dir = physPlayer#bot(pitch, me);
         let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
-        discard body.applyForce(force_)
+        discard physPlayer#body.applyForce(force_)
     }
 }
 

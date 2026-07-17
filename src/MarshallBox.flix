@@ -3,7 +3,7 @@ import org.dyn4j.world.World
 
 type alias MarshallBox = {
     world = World[Body],
-    players = Map[String, (Team, Body, Bot)],
+    players = Map[String, PhysicsPlayer],
     ball = Body,
     timeMs = Ref[Int32, Static]
 }

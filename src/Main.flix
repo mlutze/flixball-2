@@ -145,25 +145,6 @@ def init(): MarshallBox \ IO = {
     world.addBody(ball);
     addGoalWalls(world);
 
-    // random point strictly inside the pitch, leaving room for the player radius
-    // let randomX = () -> (Math.random() - 0.5) * (pitchLength() - 2.0 * playerRadius());
-    let randomY = () -> (Math.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius());
-    let randomXEast = () -> Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius());
-    let randomXWest = () -> -Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius());
-    // let bots = Vector#{Bots.runAtBall, Bots.runFromBall, Bots.wander, Bots.interceptBall, Bots.stayStill, Bots.defendOwnGoal};
-    // let randomBot = () -> Utils.randomChoice(bots);
-
-    // let mkOne = (num, team) -> {
-    //     let body = mkPlayer();
-    //     body.translate(randomX(), randomY());
-    //     world.addBody(body);
-    //     (Int32.toString(num), (team, body, randomBot()))
-    // };
-
-    // let blue = List.range(1, 12)  |> List.map(n -> mkOne(n, Team.Blue));
-    // let red  = List.range(12, 23) |> List.map(n -> mkOne(n, Team.Red));
-    // let players = List.toMap(List.append(blue, red));
-
     let bodySR = mkPlayer();
     bodySR.translate(randomXWest(), randomY());
     world.addBody(bodySR);

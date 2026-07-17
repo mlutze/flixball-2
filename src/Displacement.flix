@@ -10,7 +10,7 @@ mod Displacement {
     }
 
     pub def fromTo(l1: Location, l2: Location): Displacement = {
-        dx = l2#x - l2#x,
+        dx = l2#x - l1#x,
         dy = l2#y - l1#y
     }
 

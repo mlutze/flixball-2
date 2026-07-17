@@ -135,6 +135,24 @@ mod Bots {
         }
     }
 
+    pub def closeCircleAndShootHardEast(pitch: Pitch, me: Player): Direction = {
+        closeCircleAndShootHard(Locations.goalCenterE(), pitch, me)
+    }
+
+    pub def closeCircleAndShootHardWest(pitch: Pitch, me: Player): Direction = {
+        closeCircleAndShootHard(Locations.goalCenterW(), pitch, me)
+    }
+
+    def closeCircleAndShootHard(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let disp = Displacement.fromTo(pitch#ballLocation, me#location);
+        // if I'm making contact with the ball, then keep going
+        if (Displacement.distance(disp) < Constants.ballRadius() + Constants.playerRadius()) {
+            me#velocity |> Velocity.toDirection
+        } else {
+            closeCircleAndShoot(goal, pitch, me)
+        }
+    }
+
     pub def circleAndShootEast(pitch: Pitch, me: Player): Direction = {
         circleAndShoot(Locations.goalCenterE(), pitch, me)
     }

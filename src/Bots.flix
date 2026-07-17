@@ -1,6 +1,10 @@
 mod Bots {
     import java.lang.Math
 
+    pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
+        (pitch, player) -> eidentity(f(pitch, player))
+    }
+
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
         Direction.fromTo(me#location, pitch#ballLocation)
     }

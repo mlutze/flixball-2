@@ -161,10 +161,10 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    let playerSR = { team = Team.Red, body = bodySR, bot = Bots.closeCircleAndShootEast };
-    let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.defendWest };
-    let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.closeCircleAndShootWest };
-    let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.defendEast };
+    let playerSR = { team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootEast) };
+    let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
+    let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
+    let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
         "Red Striker" => playerSR,
         "Blue Striker" => playerSB,
@@ -247,7 +247,11 @@ def getAiDirections(box: MarshallBox): Map[String, Direction] \ IO = {
     let pitch = Marshall.makePitch(box);
     def getAiForce(name, physPlayer): Direction = {
         let me = Marshall.makePlayer(name, physPlayer);
-        physPlayer#bot(pitch, me)
+        run {
+            physPlayer#bot(pitch, me)
+        } with Logger.runWithIO
+            with Random.runWithIO
+            
     };
     box#players |> Map.mapWithKey(getAiForce)
 }

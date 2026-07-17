@@ -191,4 +191,40 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
+    pub def avoidGoalieEast(pitch: Pitch, me: Player): Direction = {
+        avoidGoalie(Locations.goalpostNE(), Locations.goalpostSE(), pitch, me)
+    }
+
+    pub def avoidGoalieWest(pitch: Pitch, me: Player): Direction = {
+        avoidGoalie(Locations.goalpostNW(), Locations.goalpostSW(), pitch, me)
+    }
+
+    // see what edge the goalie is closer to and kick toward the opposite edge of the goal
+    pub def avoidGoalie(goalpostN: Location, goalpostS: Location, pitch: Pitch, me: Player): Direction = {
+        let ball = pitch#ballLocation;
+
+        // We assume the goalie is the closest player to the goal
+        let goalCenter = Location.midpoint(goalpostN, goalpostS);
+        let (_, goalie) = pitch#players
+            |> Map.minimumValueBy(Utils.mkCmp(p -> Location.distance(p#location, goalCenter)))
+            |> Utils.unsafeGetOpt; // we know there's at least one player, which is the one associated with the bot
+        
+        // See which side the goalie is closer to
+        let distN = Location.distance(goalie#location, goalpostN);
+        let distS = Location.distance(goalie#location, goalpostS);
+        let goal = if (distN < distS) {
+            // Goalie is north; aim south
+            goalpostS
+        } else {
+            // Goalie is south; aim north
+            goalpostN
+        };
+
+        let goalBallDir = Direction.fromTo(goal, ball);
+        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
+        let ballTargetDisplacement = Displacement.inDirection(goalBallDir, centerCenterDist);
+        let target = Displacement.apply(ballTargetDisplacement, ball);
+        Direction.fromTo(me#location, target)
+    }
+
 }

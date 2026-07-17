@@ -42,4 +42,8 @@ mod Utils {
     pub def unsafeGetMap(key: k, map: Map[k, v]): v with Order[k] = {
         unsafeGetOpt(Map.get(key, map))
     }
+
+    pub def mkCmp(f: a -> b \ ef): ((a, a) -> Comparison \ ef) with Order[b] = {
+        (x, y) -> f(x) <=> f(y)
+    }
 }

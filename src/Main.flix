@@ -167,19 +167,19 @@ def init(): MarshallBox \ IO = {
     // bodySB.translate(randomXEast(), randomY());
     // world.addBody(bodySB);
 
-    // let bodyGB = mkPlayer();
-    // bodyGB.translate(randomXEast(), randomY());
-    // world.addBody(bodyGB);
+    let bodyGB = mkPlayer();
+    bodyGB.translate(randomXEast(), randomY());
+    world.addBody(bodyGB);
 
-    let playerSR = { team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootEast) };
+    let playerSR = { team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.avoidGoalieEast) };
     // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
     // let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
-    // let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
+    let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
-        "Red Striker" => playerSR
+        "Red Striker" => playerSR,
         // "Blue Striker" => playerSB,
         // "Red Goalie" => playerGR,
-        // "Blue Goalie" => playerGB
+        "Blue Goalie" => playerGB
     };
 
     let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);

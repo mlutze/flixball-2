@@ -79,18 +79,29 @@ def main(): Unit \ IO = {
 
     let buttonPanel = new JPanel();
     let startButton = new JButton("Start");
-    startButton.addActionListener(new ActionListener {
-        def actionPerformed(_this: ActionListener, _e: ActionEvent): Unit \ IO = {
-            if (gameLoop.isRunning()) {
-                startButton.setText("Start");
-                gameLoop.stop()
-            } else {
-                startButton.setText("Pause");
-                gameLoop.start()
-            }
+    let resetButton = new JButton("Reset");
+
+    def onClickStartPause(_): Unit = {
+        if (gameLoop.isRunning()) {
+            startButton.setText("Start");
+            gameLoop.stop();
+            resetButton.setEnabled(true)
+        } else {
+            startButton.setText("Pause");
+            gameLoop.start();
+            resetButton.setEnabled(false)
         }
-    });
+    };
+
+    startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
+
+    def onClickReset(_): Unit = {
+        reset(marshallBox, pitchPanel, timeLabel)
+    };
+
+    resetButton.addActionListener(Utils.mkActionListener(onClickReset));
     buttonPanel.add(startButton);
+    buttonPanel.add(resetButton);
 
     let frame = new JFrame("Flixball 2");
     frame.setSize(1000, 600);
@@ -155,6 +166,38 @@ def init(): MarshallBox \ IO = {
     };
 
     { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}
+}
+
+def randomY(): Float64 \ IO = {
+    (Math.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius())
+}
+
+def randomXEast(): Float64 \ IO = {
+     Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+}
+
+def randomXWest(): Float64 \ IO = {
+    -Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+}
+
+def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
+    box#ball.translateToOrigin();
+    box#ball.setAtRest(true);
+    foreach (
+        (_name, player) <- box#players
+    ) {
+        player#body.setAtRest(true);
+        let y = randomY();
+        let x = match player#team {
+            case Team.Red => randomXWest()
+            case Team.Blue => randomXEast()
+        };
+        player#body.translateToOrigin();
+        player#body.translate(x, y)
+    };
+    Ref.put(0, box#timeMs);
+    pitchPanel.repaint();
+    timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
 }
 
 def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer \ IO = {

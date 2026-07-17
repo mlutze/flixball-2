@@ -155,6 +155,10 @@ def init(): MarshallBox \ IO = {
     world.addBody(ball);
     addGoalWalls(world);
 
+    // temporary penalty kick test
+    let ballLoc = Locations.penaltySpotE();
+    ball.translate(ballLoc#x, ballLoc#y);
+
     let bodySR = mkPlayer();
     bodySR.translate(randomXWest(), randomY());
     world.addBody(bodySR);
@@ -171,16 +175,18 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    let playerSR = { team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.avoidGoalieEast) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkStatelessBot(Bots.avoidGoalieEast) };
     // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
     // let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
-    let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
+    let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkStatelessBot(Bots.defendEast) };
     let players = Map#{
         "Red Striker" => playerSR,
         // "Blue Striker" => playerSB,
         // "Red Goalie" => playerGR,
         "Blue Goalie" => playerGB
     };
+
+    // TODO add a check that names are unique
 
     let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
     world.addBody(preGameRing);
@@ -313,8 +319,11 @@ def getAiDirections(box: MarshallBox): Map[String, Direction] \ IO = {
     let pitch = Marshall.makePitch(box);
     def getAiForce(name, physPlayer): Direction = {
         let me = Marshall.makePlayer(name, physPlayer);
+        let state = Ref.get(physPlayer#state);
         run {
-            physPlayer#bot(pitch, me)
+            let (state1, dir) = physPlayer#bot(state, pitch, me);
+            Ref.put(state1, physPlayer#state);
+            dir
         } with Logger.runWithIO
             with Random.runWithIO
             

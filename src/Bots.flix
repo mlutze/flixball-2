@@ -1,8 +1,18 @@
 mod Bots {
     import java.lang.Math
 
-    pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
-        (pitch, player) -> eidentity(f(pitch, player))
+    pub def mkStatefulBot(f: StatefulPrebot[ef, s]): Bot with BotState[s] = {
+        (byte, pitch, player) -> 
+            let state = BotState.fromByte(byte);
+            let (state1, dir) = f(state, pitch, player);
+            let byte1 = BotState.toByte(state1);
+            eidentity((byte1, dir))
+    }
+
+    pub def mkStatelessBot(f: StatelessPrebot[ef]): Bot = {
+        (byte, pitch, player) ->
+            let dir = f(pitch, player);
+            eidentity((byte, dir))
     }
 
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {

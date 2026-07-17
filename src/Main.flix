@@ -278,6 +278,7 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redSco
             case GameState.PostGoal({ remainingMs | _ }) =>
                 if (remainingMs < 0) {
                     box#ball.translateToOrigin();
+                    box#ball.setAtRest(true);
                     Ref.put(GameState.Play, box#state)
                 }
 

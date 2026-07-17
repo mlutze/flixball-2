@@ -181,8 +181,8 @@ def init(): MarshallBox \ IO = {
         world = world,
         players = players,
         ball = ball,
-        timeMs = Ref.fresh(Static, -5000),
-        state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 5000 })),
+        timeMs = Ref.fresh(Static, -Constants.pregameMs()),
+        state = Ref.fresh(Static, GameState.PreGame({ remainingMs = Constants.pregameMs() })),
         preGameJunk = preGameJunk
     }
 }

@@ -76,4 +76,10 @@ mod Constants {
 
     pub def playerForce(): Float64 = 1200.0
 
+    pub def pregameMs(): Int32 = 10_000
+
+    pub def gameMs(): Int32 = 90_000
+
+    pub def postGoalMs(): Int32 = 10_000
+
 }

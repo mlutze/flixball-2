@@ -242,4 +242,19 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
+    pub def runAtFutureBall(pitch: Pitch, me: Player): Direction = {
+        let ballVelocity = pitch#ballVelocity;
+        let ballDirection = Velocity.toDirection(ballVelocity);
+        let ballToMe = Direction.fromTo(pitch#ballLocation, me#location);
+        let epsilon = Direction.angle(ballDirection, ballToMe);
+
+        let ballSpeed = Velocity.speed(ballVelocity);
+        let mySpeed = Velocity.speed(me#velocity);
+
+        let theta = unsafe IO { Math.acos(ballSpeed / mySpeed * Math.sin(epsilon)) };
+
+        let meToBall = Direction.invert(ballToMe);
+        Direction.addAngle(meToBall, theta)
+    }
+
 }

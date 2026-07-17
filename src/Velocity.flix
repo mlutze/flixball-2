@@ -13,4 +13,8 @@ mod Velocity {
         else
             ({ ux = v#dx / len, uy = v#dy / len })
     }
+
+    pub def speed(v: Velocity): Float64 = {
+        Float64.pow(base = v#dx * v#dx + v#dy * v#dy, 0.5)
+    }
 }

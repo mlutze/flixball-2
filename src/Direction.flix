@@ -51,4 +51,9 @@ mod Direction {
         ux = -1.0,
         uy = 0.0
     }
+
+    pub def invert(dir: Direction): Direction = {
+        ux = -dir#ux,
+        uy = -dir#uy
+    }
 }

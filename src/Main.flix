@@ -167,9 +167,9 @@ def init(): MarshallBox \ IO = {
     // bodyGR.translate(randomXWest(), randomY());
     // world.addBody(bodyGR);
 
-    // let bodySB = mkPlayer();
-    // bodySB.translate(randomXEast(), randomY());
-    // world.addBody(bodySB);
+    let bodySB = mkPlayer();
+    bodySB.translate(randomXEast(), randomY());
+    world.addBody(bodySB);
 
     let bodyGB = mkPlayer();
     bodyGB.translate(randomXEast(), randomY());
@@ -177,11 +177,11 @@ def init(): MarshallBox \ IO = {
 
     let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.avoidGoalieEast) };
     // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
-    // let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
+    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.runAtFutureBall) };
     let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
         "Red Striker" => playerSR,
-        // "Blue Striker" => playerSB,
+        "Blue Striker" => playerSB,
         // "Red Goalie" => playerGR,
         "Blue Goalie" => playerGB
     };

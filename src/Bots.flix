@@ -117,54 +117,6 @@ mod Bots {
         }
     }
 
-    pub def shoot4East(pitch: Pitch, me: Player): Direction =
-        shoot4(Locations.goalpostNE(), Locations.goalpostSE(), pitch, me)
-
-    pub def shoot4West(pitch: Pitch, me: Player): Direction =
-        shoot4(Locations.goalpostNW(), Locations.goalpostSW(), pitch, me)
-
-    // approach the lining-up spot (2 m behind the ball) until within 2 m of the ball,
-    // then circle to line up a kick between the two goalposts; once lined up, ram the ball
-    pub def shoot4(goalN: Location, goalS: Location, pitch: Pitch, me: Player): Direction = {
-        let ball = pitch#ballLocation;
-        let goalCenter = {
-            x = (goalN#x + goalS#x) / 2.0,
-            y = (goalN#y + goalS#y) / 2.0
-        };
-        let goalToBall = Direction.fromTo(goalCenter, ball);
-        let distToBall = Displacement.distance(Displacement.fromTo(me#location, ball));
-
-        if (distToBall > 2.0) {
-            // approach the lining-up spot: 2 m behind the ball on the far side from the goal
-            let approachDisp   = Displacement.inDirection(goalToBall, 2.0);
-            let approachTarget = Displacement.apply(approachDisp, ball);
-            Direction.fromTo(me#location, approachTarget)
-        } else {
-            // kickDir = direction the ball will travel after we ram it
-            let kickDir  = Direction.fromTo(me#location, ball);
-            let ballToN  = Direction.fromTo(ball, goalN);
-            let ballToS  = Direction.fromTo(ball, goalS);
-
-            // is kickDir inside the arc from ballToN to ballToS (short arc)?
-            let goalSpan = Direction.angle(ballToN, ballToS);
-            let fromN    = Direction.angle(ballToN, kickDir);
-
-            let lined = fromN * goalSpan >= 0.0 and Float64.abs(fromN) <= Float64.abs(goalSpan);
-            if (lined) {
-                // lined up — kick it
-                Direction.fromTo(me#location, ball)
-            } else {
-                // need to circle. Rotate kickDir toward the goal centre.
-                let ballToCenter = Direction.fromTo(ball, goalCenter);
-                let toCenter     = Direction.angle(kickDir, ballToCenter);
-                // to rotate kickDir CCW (positive toCenter), we must move in the
-                // direction perpendicular-CW to kickDir; hence -sign
-                let sign = if (toCenter > 0.0) 1.0 else -1.0;
-                Direction.addAngle(kickDir, -sign * Math.PI / 2.0)
-            }
-        }
-    }
-
     pub def closeCircleAndShootEast(pitch: Pitch, me: Player): Direction = {
         closeCircleAndShoot(Locations.goalCenterE(), pitch, me)
     }
@@ -175,7 +127,7 @@ mod Bots {
 
     def closeCircleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
         let disp = Displacement.fromTo(pitch#ballLocation, me#location);
-        if (Displacement.distance(disp) > 10.0) {
+        if (Displacement.distance(disp) > 5.0) {
             runAtBall(pitch, me)
         } else {
             circleAndShoot(goal, pitch, me)

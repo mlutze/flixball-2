@@ -122,6 +122,22 @@ mod Rendering {
         g.draw(circle)
     }
 
+    pub def renderForce(g: Graphics2D, source: Location, dir: Direction): Unit \ IO = {
+        let length = 2.0;
+        let disp = Displacement.inDirection(dir, length);
+        let target = Displacement.apply(disp, source);
+        let line = new Line2D$Double(
+            source#x,
+            source#y,
+            target#x,
+            target#y
+        );
+
+        g.setStroke(new BasicStroke(0.1f32));
+        g.setColor(Color.PINK);
+        g.draw(line)
+    }
+
     pub def renderBall(g: Graphics2D, location: Location): Unit \ IO = {
 
         // highlight
@@ -149,12 +165,17 @@ mod Rendering {
         g.draw(circle)
     }
 
-    pub def renderPitch(g: Graphics2D, pitch: Pitch): Unit \ IO = {
+    pub def renderPitch(g: Graphics2D, pitch: Pitch, dirs: Map[String, Direction]): Unit \ IO = {
         renderBackground(g);
         foreach (
             player <- Map.valuesOf(pitch#players)
         ) {
-            renderPlayer(g, player)
+            let dir = match Map.get(player#name, dirs) {
+                case None => unreachable!()
+                case Some(d) => d
+            };
+            renderPlayer(g, player);
+            renderForce(g, player#location, dir)
         };
         renderBall(g, pitch#ballLocation)
     }

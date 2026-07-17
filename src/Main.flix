@@ -71,7 +71,8 @@ def main(): Unit \ IO = {
             g2.setStroke(new BasicStroke(0.05f32));
 
             let pitch = Marshall.makePitch(marshallBox);
-            renderPitch(g2, pitch)
+            let dirs = getAiDirections(marshallBox);
+            renderPitch(g2, pitch, dirs)
         }
     };
 
@@ -205,7 +206,8 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def go(_) = {
-        executeAi(box);
+        let dirs = getAiDirections(box);
+        executeAi(box, dirs);
         adjustDampening(box);
         MarshallBox.addTimeMs(deltaTms, box);
         box#world.step(1, deltaTs);
@@ -222,16 +224,26 @@ def formatTimeMs(ms: Int32): String = {
     "${whole}.${tenth}"
 }
 
-def executeAi(box: MarshallBox): Unit \ IO = {
-    let pitch = Marshall.makePitch(box);
+def executeAi(box: MarshallBox, forces: Map[String, Direction]): Unit \ IO = {
     foreach (
         (name, physPlayer) <- box#players
     ) {
-        let me = Marshall.makePlayer(name, physPlayer);
-        let dir = physPlayer#bot(pitch, me);
-        let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
-        discard physPlayer#body.applyForce(force_)
+        match Map.get(name, forces) {
+            case None => unreachable!()
+            case Some(dir) =>
+                let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
+                discard physPlayer#body.applyForce(force_)
+        }
     }
+}
+
+def getAiDirections(box: MarshallBox): Map[String, Direction] \ IO = {
+    let pitch = Marshall.makePitch(box);
+    def getAiForce(name, physPlayer): Direction = {
+        let me = Marshall.makePlayer(name, physPlayer);
+        physPlayer#bot(pitch, me)
+    };
+    box#players |> Map.mapWithKey(getAiForce)
 }
 
 def adjustDampening(box: MarshallBox): Unit \ IO = {

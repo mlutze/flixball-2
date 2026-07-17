@@ -174,6 +174,8 @@ def init(): MarshallBox \ IO = {
 
     let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
     world.addBody(preGameRing);
+    let preGameJunk = MutList.empty(Static);
+    preGameJunk |> MutList.push(preGameRing);
 
     {
         world = world,
@@ -181,7 +183,7 @@ def init(): MarshallBox \ IO = {
         ball = ball,
         timeMs = Ref.fresh(Static, -5000),
         state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 5000 })),
-        preGameJunk = MutList.empty(Static)
+        preGameJunk = preGameJunk
     }
 }
 
@@ -198,6 +200,7 @@ def randomXWest(): Float64 \ IO = {
 }
 
 def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
+    // TODO all the way to pregame
     box#ball.translateToOrigin();
     box#ball.setAtRest(true);
     foreach (

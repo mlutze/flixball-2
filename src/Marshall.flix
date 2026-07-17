@@ -14,7 +14,6 @@ mod Marshall {
     pub def makePlayer(name: String, p: PhysicsPlayer): Player \ IO = {
         team = p#team,
         name = name,
-        number = p#number,
         location = getLocation(p#body),
         velocity = getVelocity(p#body)
     }

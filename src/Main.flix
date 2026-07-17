@@ -235,7 +235,8 @@ def executeAi(box: MarshallBox): Unit \ IO = {
 }
 
 def adjustDampening(box: MarshallBox): Unit \ IO = {
-    let damping = match getBallLocationClass(box) {
+    let locationClass = getBallLocationClass(box);
+    let damping = match locationClass {
         case LocationClass.InBounds => ballLinearDamping()
         case LocationClass.OutOfBounds => ballLinearDamping() * 5.0
         case LocationClass.EastGoal => ballLinearDamping() * 10.0
@@ -247,7 +248,7 @@ def adjustDampening(box: MarshallBox): Unit \ IO = {
 def getBallLocationClass(box: MarshallBox): LocationClass \ IO = {
     let pitchRectangle = new Rectangle2D$Double(
         -pitchLength() / 2.0,
-        pitchWidth() / 2.0,
+        -pitchWidth() / 2.0,
         pitchLength(),
         pitchWidth()
     );
@@ -281,7 +282,7 @@ def getBallLocationClass(box: MarshallBox): LocationClass \ IO = {
     }
 }
 
-enum LocationClass {
+enum LocationClass with ToString {
     case InBounds
     case OutOfBounds
     case EastGoal

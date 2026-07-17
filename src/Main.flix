@@ -172,7 +172,17 @@ def init(): MarshallBox \ IO = {
         "Blue Goalie" => playerGB
     };
 
-    { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}
+    let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
+    world.addBody(preGameRing);
+
+    {
+        world = world,
+        players = players,
+        ball = ball,
+        timeMs = Ref.fresh(Static, -5000),
+        state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 5000 })),
+        preGameJunk = MutList.empty(Static)
+    }
 }
 
 def randomY(): Float64 \ IO = {
@@ -211,11 +221,27 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer
     let deltaTs = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
+
     def go(_) = {
         let dirs = getAiDirections(box);
         executeAi(box, dirs);
         adjustDampening(box);
         MarshallBox.addTimeMs(deltaTms, box);
+
+        match Ref.get(box#state) {
+            case GameState.PreGame({ remainingMs }) =>
+                if (remainingMs < 0) {
+                    Ref.put(GameState.Play, box#state);
+                    MarshallBox.clearJunk(box)
+                }
+            case GameState.Play => ()
+                // TODO check for goal
+            case GameState.PostGoal({ remainingMs | _ }) =>
+                if (remainingMs < 0) {
+                    Ref.put(GameState.Play, box#state)
+                }
+
+        };
         box#world.step(1, deltaTs);
         pitchPanel.repaint();
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
@@ -363,5 +389,21 @@ def addGoalWalls(world: World[Body]): Unit \ IO = {
     world.addBody(mkWall(Locations.goalpostNE(), Locations.goalBackNE()));   // top
     world.addBody(mkWall(Locations.goalpostSE(), Locations.goalBackSE()));   // bottom
     world.addBody(mkWall(Locations.goalBackNE(), Locations.goalBackSE()))    // back
+}
+
+def mkRing(cx: Float64, cy: Float64, radius: Float64, segments: Int32): Body \ IO = {
+    let body = new Body();
+    let n = Int32.toFloat64(segments);
+    foreach (i <- List.range(0, segments)) {
+        let a1 = 2.0 * Math.PI * Int32.toFloat64(i)     / n;
+        let a2 = 2.0 * Math.PI * Int32.toFloat64(i + 1) / n;
+        let p1 = new Vector2(cx + radius * unsafe IO { Math.cos(a1) },
+                             cy + radius * unsafe IO { Math.sin(a1) });
+        let p2 = new Vector2(cx + radius * unsafe IO { Math.cos(a2) },
+                             cy + radius * unsafe IO { Math.sin(a2) });
+        discard body.addFixture(Geometry.createSegment(p1, p2), 1.0, 0.3, 0.0)
+    };
+    body.setMass(MassType.INFINITE);
+    body
 }
 

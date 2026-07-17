@@ -31,6 +31,7 @@ mod Rendering {
     use Constants.penaltySpotRadius
     use Constants.penaltyArcDist
     use Constants.centerCircleRadius
+    use Constants.cornerArcRadius
 
     pub def renderBackground(g: Graphics2D): Unit \ IO = {
         // grass: just do a huge background
@@ -89,7 +90,21 @@ mod Rendering {
         let fullAngleDeg = 2.0 * halfAngleDeg;
         // west arc opens toward +x (through 0°); east arc opens toward -x (through 180°)
         g.draw(new Arc2D$Double(psxW - aRadius, psyW - aRadius, aDiameter, aDiameter, -halfAngleDeg, fullAngleDeg, Arc2D.OPEN));
-        g.draw(new Arc2D$Double(psxE - aRadius, psyE - aRadius, aDiameter, aDiameter, 180.0 - halfAngleDeg, fullAngleDeg, Arc2D.OPEN))
+        g.draw(new Arc2D$Double(psxE - aRadius, psyE - aRadius, aDiameter, aDiameter, 180.0 - halfAngleDeg, fullAngleDeg, Arc2D.OPEN));
+
+        // corner arcs: quarter circle at each pitch corner, bulging toward pitch interior
+        let carc     = cornerArcRadius();
+        let carcSize = carc * 2.0;
+        let { x = neX, y = neY } = Locations.cornerNE();
+        let { x = nwX, y = nwY } = Locations.cornerNW();
+        let { x = seX, y = seY } = Locations.cornerSE();
+        let { x = swX, y = swY } = Locations.cornerSW();
+        // Starts chosen so each arc passes through the interior quadrant of its corner.
+        // Y-flip mirrors Arc2D angles vs. world compass, hence the seemingly-swapped values.
+        g.draw(new Arc2D$Double(neX - carc, neY - carc, carcSize, carcSize,  90.0, 90.0, Arc2D.OPEN));
+        g.draw(new Arc2D$Double(nwX - carc, nwY - carc, carcSize, carcSize,   0.0, 90.0, Arc2D.OPEN));
+        g.draw(new Arc2D$Double(seX - carc, seY - carc, carcSize, carcSize, 180.0, 90.0, Arc2D.OPEN));
+        g.draw(new Arc2D$Double(swX - carc, swY - carc, carcSize, carcSize, 270.0, 90.0, Arc2D.OPEN))
     }
 
     pub def renderPlayer(g: Graphics2D, player: Player): Unit \ IO = {

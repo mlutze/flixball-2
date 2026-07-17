@@ -8,6 +8,8 @@ mod Constants {
 
     pub def centerCircleRadius(): Float64 = 9.15
 
+    pub def cornerArcRadius(): Float64 = 1.0
+
     pub def goalWidth(): Float64 = 7.32
 
     // net depth: arbitrary rendering value, not a FIFA spec

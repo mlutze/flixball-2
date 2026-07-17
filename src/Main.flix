@@ -75,12 +75,19 @@ def main(): Unit \ IO = {
         }
     };
 
+    let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel);
+
     let buttonPanel = new JPanel();
     let startButton = new JButton("Start");
     startButton.addActionListener(new ActionListener {
         def actionPerformed(_this: ActionListener, _e: ActionEvent): Unit \ IO = {
-            startButton.setEnabled(false);
-            startGameLoop(marshallBox, pitchPanel, timeLabel)
+            if (gameLoop.isRunning()) {
+                startButton.setText("Start");
+                gameLoop.stop()
+            } else {
+                startButton.setText("Pause");
+                gameLoop.start()
+            }
         }
     });
     buttonPanel.add(startButton);
@@ -150,7 +157,7 @@ def init(): MarshallBox \ IO = {
     { world = world, players = players, ball = ball, timeMs = Ref.fresh(Static, 0)}
 }
 
-def startGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
+def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Timer \ IO = {
     let deltaTs = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
@@ -163,7 +170,7 @@ def startGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
     };
 
-    new Timer(deltaTms, Utils.mkActionListener(go)).start()
+    new Timer(deltaTms, Utils.mkActionListener(go))
 }
 
 def formatTimeMs(ms: Int32): String = {

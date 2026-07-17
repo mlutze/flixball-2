@@ -155,17 +155,13 @@ def init(): MarshallBox \ IO = {
     world.addBody(ball);
     addGoalWalls(world);
 
-    // temporary penalty kick test
-    let ballLoc = Locations.penaltySpotE();
-    ball.translate(ballLoc#x, ballLoc#y);
+    let bodySR = mkPlayer();
+    bodySR.translate(randomXWest(), randomY());
+    world.addBody(bodySR);
 
-    // let bodySR = mkPlayer();
-    // bodySR.translate(randomXWest(), randomY());
-    // world.addBody(bodySR);
-
-    // let bodyGR = mkPlayer();
-    // bodyGR.translate(randomXWest(), randomY());
-    // world.addBody(bodyGR);
+    let bodyGR = mkPlayer();
+    bodyGR.translate(randomXWest(), randomY());
+    world.addBody(bodyGR);
 
     let bodySB = mkPlayer();
     bodySB.translate(randomXEast(), randomY());
@@ -175,14 +171,14 @@ def init(): MarshallBox \ IO = {
     bodyGB.translate(randomXEast(), randomY());
     world.addBody(bodyGB);
 
-    // let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootHardEast) };
-    // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
-    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootHardWest) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootHardEast) };
+    let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
+    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
     let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
-        // "Red Striker" => playerSR,
+        "Red Striker" => playerSR,
         "Blue Striker" => playerSB,
-        // "Red Goalie" => playerGR,
+        "Red Goalie" => playerGR,
         "Blue Goalie" => playerGB
     };
 

@@ -251,10 +251,15 @@ mod Bots {
         let ballSpeed = Velocity.speed(ballVelocity);
         let mySpeed = Velocity.speed(me#velocity);
 
-        let theta = unsafe IO { Math.acos(ballSpeed / mySpeed * Math.sin(epsilon)) };
-
-        let meToBall = Direction.invert(ballToMe);
-        Direction.addAngle(meToBall, theta)
+        // If I don't have a speed then I can't calculate
+        // and if the ball doesn't have a speed then I might as well run at it.
+        if (mySpeed < 0.01 or ballSpeed < 0.01) {
+            runAtBall(pitch, me)
+        } else {
+            let theta = unsafe IO { Math.asin(ballSpeed / mySpeed * Math.sin(epsilon)) };
+            let meToBall = Direction.invert(ballToMe);
+            Direction.addAngle(meToBall, theta)
+        }
     }
 
 }

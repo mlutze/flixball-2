@@ -159,27 +159,27 @@ def init(): MarshallBox \ IO = {
     bodySR.translate(randomXWest(), randomY());
     world.addBody(bodySR);
 
-    let bodyGR = mkPlayer();
-    bodyGR.translate(randomXWest(), randomY());
-    world.addBody(bodyGR);
+    // let bodyGR = mkPlayer();
+    // bodyGR.translate(randomXWest(), randomY());
+    // world.addBody(bodyGR);
 
-    let bodySB = mkPlayer();
-    bodySB.translate(randomXEast(), randomY());
-    world.addBody(bodySB);
+    // let bodySB = mkPlayer();
+    // bodySB.translate(randomXEast(), randomY());
+    // world.addBody(bodySB);
 
-    let bodyGB = mkPlayer();
-    bodyGB.translate(randomXEast(), randomY());
-    world.addBody(bodyGB);
+    // let bodyGB = mkPlayer();
+    // bodyGB.translate(randomXEast(), randomY());
+    // world.addBody(bodyGB);
 
     let playerSR = { team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootEast) };
-    let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
-    let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
-    let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
+    // let playerGR = { team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
+    // let playerSB = { team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
+    // let playerGB = { team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
-        "Red Striker" => playerSR,
-        "Blue Striker" => playerSB,
-        "Red Goalie" => playerGR,
-        "Blue Goalie" => playerGB
+        "Red Striker" => playerSR
+        // "Blue Striker" => playerSB,
+        // "Red Goalie" => playerGR,
+        // "Blue Goalie" => playerGB
     };
 
     let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
@@ -275,6 +275,7 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redSco
                 }
             case GameState.PostGoal({ remainingMs | _ }) =>
                 if (remainingMs < 0) {
+                    box#ball.translateToOrigin();
                     Ref.put(GameState.Play, box#state)
                 }
 

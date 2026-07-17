@@ -235,12 +235,57 @@ def executeAi(box: MarshallBox): Unit \ IO = {
 }
 
 def adjustDampening(box: MarshallBox): Unit \ IO = {
-    let center = box#ball.getWorldCenter();
-    let inBounds =
-        Float64.abs(center.x) <= pitchLength() / 2.0
-        and Float64.abs(center.y) <= pitchWidth() / 2.0;
-    let damping = if (inBounds) ballLinearDamping() else ballLinearDamping() * 5.0;
+    let damping = match getBallLocationClass(box) {
+        case LocationClass.InBounds => ballLinearDamping()
+        case LocationClass.OutOfBounds => ballLinearDamping() * 5.0
+        case LocationClass.EastGoal => ballLinearDamping() * 10.0
+        case LocationClass.WestGoal => ballLinearDamping() * 10.0
+    };
     box#ball.setLinearDamping(damping)
+}
+
+def getBallLocationClass(box: MarshallBox): LocationClass \ IO = {
+    let pitchRectangle = new Rectangle2D$Double(
+        -pitchLength() / 2.0,
+        pitchWidth() / 2.0,
+        pitchLength(),
+        pitchWidth()
+    );
+    let ballCenter = box#ball.getWorldCenter();
+    let ballShape = new Ellipse2D$Double(
+        ballCenter.x - Constants.ballRadius(),
+        ballCenter.y - Constants.ballRadius(),
+        Constants.ballRadius() * 2.0,
+        Constants.ballRadius() * 2.0
+    );
+    let westGoalRectangle = new Rectangle2D$Double(
+        Locations.goalBackSW()#x,
+        Locations.goalBackSW()#y,
+        Constants.goalDepth(),
+        Constants.goalWidth()
+    );
+    let eastGoalRectangle = new Rectangle2D$Double(
+        Locations.goalpostSE()#x,
+        Locations.goalpostSE()#y,
+        Constants.goalDepth(),
+        Constants.goalWidth()
+    );
+    if (ballShape.intersects(pitchRectangle)) {
+        LocationClass.InBounds
+    } else if (ballShape.intersects(eastGoalRectangle)) {
+        LocationClass.EastGoal
+    } else if (ballShape.intersects(westGoalRectangle)) {
+        LocationClass.WestGoal
+    } else {
+        LocationClass.OutOfBounds
+    }
+}
+
+enum LocationClass {
+    case InBounds
+    case OutOfBounds
+    case EastGoal
+    case WestGoal
 }
 
 def mkWorld(): World[Body] \ IO = {

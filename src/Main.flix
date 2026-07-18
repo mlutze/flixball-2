@@ -181,7 +181,7 @@ def init(): MarshallBox \ IO = {
     // bodyGB.translate(randomXEast(), randomY());
     // world.addBody(bodyGB);
 
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.closeCircleAndShootHardEast) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShootEast) };
     // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
     let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
     // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };

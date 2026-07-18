@@ -176,6 +176,51 @@ mod Bots {
         Direction.addAngle(meToTarget, boundedTheta)
     }
 
+    pub def approachCircleAndShootEast(pitch: Pitch, me: Player): Direction = {
+        approachCircleAndShoot(Locations.goalCenterE(), pitch, me)
+    }
+
+    pub def approachCircleAndShootWest(pitch: Pitch, me: Player): Direction = {
+        approachCircleAndShoot(Locations.goalCenterW(), pitch, me)
+    }
+
+    def approachCircleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let meToBall = Location.distance(me#location, pitch#ballLocation);
+        if (meToBall <= 6.0) {
+            circleAndShoot(goal, pitch, me)
+        } else {
+            approachCircle(goal, pitch, me)
+        }
+    }
+
+    def approachCircle(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let radius = 2.75;
+        let target = contactPoint(goal, pitch);
+        let ballToGoal = Direction.fromTo(target, goal);
+
+        let ballToCenterLeft = Direction.addAngle(ballToGoal, Math.PI / 2.0);
+        let ballToCenterLeftDisp = Displacement.inDirection(ballToCenterLeft, radius);
+        let centerLeft = Displacement.apply(ballToCenterLeftDisp, target);
+        let centerLeftDist = Location.distance(me#location, centerLeft);
+
+        let ballToCenterRight = Direction.addAngle(ballToGoal, -Math.PI / 2.0);
+        let ballToCenterRightDisp = Displacement.inDirection(ballToCenterRight, radius);
+        let centerRight = Displacement.apply(ballToCenterRightDisp, target);
+        let centerRightDist = Location.distance(me#location, centerRight);
+
+        // decide if we're circling left or right
+        let (center, rot) = if (centerLeftDist < centerRightDist) {
+            (centerLeft, -1.0)
+        } else {
+            (centerRight, 1.0)
+        };
+        let meToCenter = Displacement.fromTo(me#location, center);
+        let d_c = Displacement.distance(meToCenter);
+        let theta_t = unsafe IO { rot * Math.asin(radius / d_c) };
+        let meToCenterDir = Displacement.getDirection(meToCenter);
+        Direction.addAngle(meToCenterDir, theta_t)
+    }
+
     // the location one must be to strike the ball such that it will enter the goal (ignoring momentum)
     def contactPoint(goal: Location, pitch: Pitch): Location = {
         let ball = pitch#ballLocation;

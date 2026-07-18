@@ -8,6 +8,9 @@ all: $(JARFILE)
 run: $(JARFILE)
 	java -jar $(JARFILE)
 
+runH: $(JARFILE)
+	java -jar $(JARFILE) -H
+
 check: $(FLIX_SOURCES) flix.toml
 	flix check
 

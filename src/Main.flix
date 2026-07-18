@@ -47,106 +47,116 @@ use Rendering.renderPitch
 
 // The main entry point.
 def main(): Unit \ IO = {
-    let marshallBox = init();
+    let args = run Sys.Env.getArgs() with Sys.Env.runWithIO;
+    if (args == List#{"-H"}) {
+        let box = init();
+        runGame(box);
+        let redScore = Ref.get(box#redScore);
+        let blueScore = Ref.get(box#blueScore);
+        println("${redScore},${blueScore}")
+    } else {
 
-    let scorePanel = new JPanel();
-    let timeLabel = new JLabel();
-    timeLabel.setText("0.0");
-    
-    let redScoreLabel = new JLabel();
-    redScoreLabel.setForeground(Color.RED);
-    redScoreLabel.setText("0");
-    let blueScoreLabel = new JLabel();
-    blueScoreLabel.setForeground(Color.BLUE);
-    blueScoreLabel.setText("0");
+        let marshallBox = init();
 
-    scorePanel.add(redScoreLabel);
-    scorePanel.add(timeLabel);
-    scorePanel.add(blueScoreLabel);
+        let scorePanel = new JPanel();
+        let timeLabel = new JLabel();
+        timeLabel.setText("0.0");
+        
+        let redScoreLabel = new JLabel();
+        redScoreLabel.setForeground(Color.RED);
+        redScoreLabel.setText("0");
+        let blueScoreLabel = new JLabel();
+        blueScoreLabel.setForeground(Color.BLUE);
+        blueScoreLabel.setText("0");
 
-    let forcesRef = Ref.fresh(Static, false);
+        scorePanel.add(redScoreLabel);
+        scorePanel.add(timeLabel);
+        scorePanel.add(blueScoreLabel);
 
-    let pitchPanel = new JPanel {
-        def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
-            // super.paintComponent(g);
-            let g2 = unchecked_cast(g as Graphics2D);
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        let forcesRef = Ref.fresh(Static, false);
 
-            let scale = Float64.min(
-                Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
-                Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
-            );
-            g2.translate(
-                Int32.toFloat64(this.getWidth()) / 2.0,
-                Int32.toFloat64(this.getHeight()) / 2.0
-            );
-            g2.scale(scale, -scale);
-            g2.setStroke(new BasicStroke(0.05f32));
+        let pitchPanel = new JPanel {
+            def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
+                // super.paintComponent(g);
+                let g2 = unchecked_cast(g as Graphics2D);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            let pitch = Marshall.makePitch(marshallBox);
-            let dirs = if (Ref.get(forcesRef)) {
-                Some(getAiDirections(marshallBox))
+                let scale = Float64.min(
+                    Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
+                    Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
+                );
+                g2.translate(
+                    Int32.toFloat64(this.getWidth()) / 2.0,
+                    Int32.toFloat64(this.getHeight()) / 2.0
+                );
+                g2.scale(scale, -scale);
+                g2.setStroke(new BasicStroke(0.05f32));
+
+                let pitch = Marshall.makePitch(marshallBox);
+                let dirs = if (Ref.get(forcesRef)) {
+                    Some(getAiDirections(marshallBox))
+                } else {
+                    None
+                };
+                renderPitch(g2, pitch, dirs)
+            }
+        };
+
+        let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
+
+        let buttonPanel = new JPanel();
+        let startButton = new JButton("Start");
+        let resetButton = new JButton("Reset");
+        let forcesButton = new JButton("Show Forces");
+
+        def onClickStartPause(_): Unit = {
+            if (gameLoop.isRunning()) {
+                startButton.setText("Start");
+                gameLoop.stop();
+                resetButton.setEnabled(true)
             } else {
-                None
-            };
-            renderPitch(g2, pitch, dirs)
-        }
-    };
+                startButton.setText("Pause");
+                gameLoop.start();
+                resetButton.setEnabled(false)
+            }
+        };
 
-    let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
+        startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
 
-    let buttonPanel = new JPanel();
-    let startButton = new JButton("Start");
-    let resetButton = new JButton("Reset");
-    let forcesButton = new JButton("Show Forces");
+        def onClickReset(_): Unit = {
+            reset(marshallBox, pitchPanel, timeLabel)
+        };
 
-    def onClickStartPause(_): Unit = {
-        if (gameLoop.isRunning()) {
-            startButton.setText("Start");
-            gameLoop.stop();
-            resetButton.setEnabled(true)
-        } else {
-            startButton.setText("Pause");
-            gameLoop.start();
-            resetButton.setEnabled(false)
-        }
-    };
+        resetButton.addActionListener(Utils.mkActionListener(onClickReset));
 
-    startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
+        def onClickForces(_): Unit = {
+            let nowShowing = Ref.get(forcesRef);
+            if (nowShowing) {
+                Ref.put(false, forcesRef);
+                forcesButton.setText("Show Forces");
+                pitchPanel.repaint()
+            } else {
+                Ref.put(true, forcesRef);
+                forcesButton.setText("Hide Forces");
+                pitchPanel.repaint()
+            }
+        };
 
-    def onClickReset(_): Unit = {
-        reset(marshallBox, pitchPanel, timeLabel)
-    };
+        forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
 
-    resetButton.addActionListener(Utils.mkActionListener(onClickReset));
+        buttonPanel.add(startButton);
+        buttonPanel.add(resetButton);
+        buttonPanel.add(forcesButton);
 
-    def onClickForces(_): Unit = {
-        let nowShowing = Ref.get(forcesRef);
-        if (nowShowing) {
-            Ref.put(false, forcesRef);
-            forcesButton.setText("Show Forces");
-            pitchPanel.repaint()
-        } else {
-            Ref.put(true, forcesRef);
-            forcesButton.setText("Hide Forces");
-            pitchPanel.repaint()
-        }
-    };
-
-    forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
-
-    buttonPanel.add(startButton);
-    buttonPanel.add(resetButton);
-    buttonPanel.add(forcesButton);
-
-    let frame = new JFrame("Flixball 2");
-    frame.setSize(1000, 600);
-    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.add(pitchPanel, BorderLayout.CENTER);
-    frame.add(scorePanel, BorderLayout.NORTH);
-    frame.add(buttonPanel, BorderLayout.SOUTH);
-    frame.setVisible(true)
+        let frame = new JFrame("Flixball 2");
+        frame.setSize(1000, 600);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(pitchPanel, BorderLayout.CENTER);
+        frame.add(scorePanel, BorderLayout.NORTH);
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.setVisible(true)
+    }
 }
 
 def init(): MarshallBox \ IO = {
@@ -234,6 +244,84 @@ def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = 
     timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
 }
 
+// TODO massive duplication here
+def runGame(box: MarshallBox): Unit \ IO = {
+    let deltaTs = 1.0 / 60.0;
+    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
+
+    def go() = {
+        let dirs = getAiDirections(box);
+        executeAi(box, dirs);
+        adjustDampening(box);
+        MarshallBox.addTimeMs(deltaTms, box);
+
+        let continue = match Ref.get(box#state) {
+            case GameState.PreGame({ remainingMs }) =>
+                if (remainingMs < 0) {
+                    Ref.put(GameState.Play, box#state);
+                    MarshallBox.clearJunk(box)
+                };
+                true
+            case GameState.Play =>
+                match getBallLocationClass(box) {
+                    // red has scored
+                    case LocationClass.EastGoal =>
+                        box#redScore |> Ref.transform(s -> s + 1);
+                        let newState = GameState.PostGoal({
+                            remainingMs = Constants.postGoalMs(),
+                            team = Team.Red
+                        });
+                        Ref.put(newState, box#state)
+
+                    // blue has scored
+                    case LocationClass.WestGoal =>
+                        box#blueScore |> Ref.transform(s -> s + 1);
+                        let newState = GameState.PostGoal({
+                            remainingMs = Constants.postGoalMs(),
+                            team = Team.Blue
+                        });
+                        Ref.put(newState, box#state)
+
+                    // no one scored, just check if it's over
+                    case LocationClass.InBounds =>
+                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                            let newState = GameState.PostGame({
+                                remainingMs = Constants.postGameMs()
+                            });
+                            Ref.put(newState, box#state)
+                        }
+                    case LocationClass.OutOfBounds =>
+                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                            let newState = GameState.PostGame({
+                                remainingMs = Constants.postGameMs()
+                            });
+                            Ref.put(newState, box#state)
+                        }
+                };
+                true
+            case GameState.PostGoal({ remainingMs | _ }) =>
+                if (remainingMs < 0) {
+                    box#ball.translateToOrigin();
+                    box#ball.setAtRest(true);
+                    Ref.put(GameState.Play, box#state)
+                };
+                true
+            case GameState.PostGame({ remainingMs }) =>
+                if (remainingMs < 0) {
+                    Ref.put(GameState.Exit, box#state)
+                };
+                true
+            case GameState.Exit => 
+                false
+        };
+        box#world.step(1, deltaTs);
+        if (continue) {
+            go()
+        }
+    };
+    go()
+}
+
 def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel): Timer \ IO = {
     let deltaTs = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
@@ -272,8 +360,20 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redSco
                         Ref.put(newState, box#state)
 
                     // no one scored, nothing to do
-                    case LocationClass.InBounds => ()
-                    case LocationClass.OutOfBounds => ()
+                    case LocationClass.InBounds =>
+                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                            let newState = GameState.PostGame({
+                                remainingMs = Constants.postGameMs()
+                            });
+                            Ref.put(newState, box#state)
+                        }
+                    case LocationClass.OutOfBounds =>
+                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                            let newState = GameState.PostGame({
+                                remainingMs = Constants.postGameMs()
+                            });
+                            Ref.put(newState, box#state)
+                        }
                 }
             case GameState.PostGoal({ remainingMs | _ }) =>
                 if (remainingMs < 0) {

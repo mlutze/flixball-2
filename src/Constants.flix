@@ -82,4 +82,6 @@ mod Constants {
 
     pub def postGoalMs(): Int32 = 10_000
 
+    pub def postGameMs(): Int32 = 30_000
+
 }

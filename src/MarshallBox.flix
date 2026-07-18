@@ -21,6 +21,9 @@ mod MarshallBox {
                 GameState.PostGoal({ remainingMs = remainingMs - ms, team = team})
             case GameState.PreGame({ remainingMs }) =>
                 GameState.PreGame({ remainingMs = remainingMs - ms})
+            case GameState.PostGame({ remainingMs }) =>
+                GameState.PostGame({ remainingMs = remainingMs - ms})
+            case GameState.Exit => GameState.Exit
         })
     }
 

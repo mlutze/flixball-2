@@ -78,7 +78,7 @@ mod Constants {
 
     pub def pregameMs(): Int32 = 10_000
 
-    pub def gameMs(): Int32 = 90_000
+    pub def gameMs(): Int32 = 300_000
 
     pub def postGoalMs(): Int32 = 10_000
 

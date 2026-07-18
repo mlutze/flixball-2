@@ -239,7 +239,7 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redSco
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
 
-    def go(_) = {
+    def go(event) = {
         let dirs = getAiDirections(box);
         executeAi(box, dirs);
         adjustDampening(box);
@@ -281,7 +281,13 @@ def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redSco
                     box#ball.setAtRest(true);
                     Ref.put(GameState.Play, box#state)
                 }
-
+            case GameState.PostGame({ remainingMs }) =>
+                if (remainingMs < 0) {
+                    Ref.put(GameState.Exit, box#state)
+                }
+            case GameState.Exit =>
+                let timer = unchecked_cast(event.getSource() as Timer);
+                timer.stop()
         };
         box#world.step(1, deltaTs);
         pitchPanel.repaint();

@@ -280,4 +280,13 @@ mod Bots {
         }
     }
 
+    pub def isBehindGoal(loc: Location): Bool = {
+        let xW = Locations.goalBackNW()#x;
+        let xE = Locations.goalBackNE()#x;
+        let yMax = Locations.goalBackNW()#y;
+        let yMin = Locations.goalBackSW()#y;
+        loc#y < yMax and loc#y < yMin and (loc#x < xW or loc#x > xE)
+    }
+
+
 }

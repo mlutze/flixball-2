@@ -127,7 +127,8 @@ def main(): Unit \ IO = {
         startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
 
         def onClickReset(_): Unit = {
-            reset(marshallBox, pitchPanel, timeLabel)
+            resetGame(marshallBox);
+            refreshDisplay(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel)
         };
 
         resetButton.addActionListener(Utils.mkActionListener(onClickReset));
@@ -169,27 +170,21 @@ def init(): MarshallBox \ IO = {
     addGoalWalls(world);
 
     let bodySR = mkPlayer();
-    let bodySRLoc = randomStartWest();
-    bodySR.translate(bodySRLoc#x, bodySRLoc#y);
     world.addBody(bodySR);
 
     // let bodyGR = mkPlayer();
-    // bodyGR.translate(randomXWest(), randomY());
     // world.addBody(bodyGR);
 
     let bodySB = mkPlayer();
-    let bodySBLoc = randomStartEast();
-    bodySB.translate(bodySBLoc#x, bodySBLoc#y);
     world.addBody(bodySB);
 
     // let bodyGB = mkPlayer();
-    // bodyGB.translate(randomXEast(), randomY());
     // world.addBody(bodyGB);
 
     let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShoot) };
-    // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
+    // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
     let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShoot) };
-    // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
+    // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
     let players = Map#{
         "Red Striker" => playerSR,
         "Blue Striker" => playerSB
@@ -199,21 +194,49 @@ def init(): MarshallBox \ IO = {
 
     // TODO add a check that names are unique
 
-    let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
-    world.addBody(preGameRing);
-    let preGameJunk = MutList.empty(Static);
-    preGameJunk |> MutList.push(preGameRing);
-
-    {
+    // All the refs here are placeholders
+    let box = {
         world = world,
         players = players,
         ball = ball,
-        timeMs = Ref.fresh(Static, -Constants.pregameMs()),
-        state = Ref.fresh(Static, GameState.PreGame({ remainingMs = Constants.pregameMs() })),
-        preGameJunk = preGameJunk,
+        timeMs = Ref.fresh(Static, 0),
+        state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
+        preGameJunk = MutList.empty(Static),
         redScore = Ref.fresh(Static, 0),
         blueScore = Ref.fresh(Static, 0)
-    }
+    };
+
+    resetGame(box);
+    box
+}
+
+def resetGame(box: MarshallBox): Unit \ IO = {
+    box#ball.translateToOrigin();
+    box#ball.setAtRest(true);
+
+    foreach ((_name, player) <- box#players) {
+        player#body.setAtRest(true);
+        let loc = randomStartFor(player#team);
+        player#body.translateToOrigin();
+        player#body.translate(loc#x, loc#y)
+    };
+
+    Ref.put(-Constants.pregameMs(), box#timeMs);
+    Ref.put(GameState.PreGame({ remainingMs = Constants.pregameMs() }), box#state);
+
+    Ref.put(0, box#redScore);
+    Ref.put(0, box#blueScore);
+
+    // rebuild pre-game barriers
+    MarshallBox.clearJunk(box);
+    let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
+    box#world.addBody(preGameRing);
+    MutList.push(preGameRing, box#preGameJunk)
+}
+
+def randomStartFor(team: Team): Location \ IO = match team {
+    case Team.West => randomStartWest()
+    case Team.East => randomStartEast()
 }
 
 def randomY(): Float64 \ IO = {
@@ -261,27 +284,6 @@ def randomStartEast(): Location \ IO = {
     } else {
         loc
     }
-}
-
-def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
-    // TODO all the way to pregame
-    box#ball.translateToOrigin();
-    box#ball.setAtRest(true);
-    foreach (
-        (_name, player) <- box#players
-    ) {
-        player#body.setAtRest(true);
-        let y = randomY();
-        let x = match player#team {
-            case Team.West => randomXWest()
-            case Team.East => randomXEast()
-        };
-        player#body.translateToOrigin();
-        player#body.translate(x, y)
-    };
-    Ref.put(0, box#timeMs);
-    pitchPanel.repaint();
-    timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
 }
 
 // runs one game tick; returns whether to keep going
@@ -365,6 +367,13 @@ def runGame(box: MarshallBox): Unit \ IO = {
     loop()
 }
 
+def refreshDisplay(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel): Unit \ IO = {
+    pitchPanel.repaint();
+    timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
+    redScoreLabel.setText("${Ref.get(box#redScore)}");
+    blueScoreLabel.setText("${Ref.get(box#blueScore)}")
+}
+
 def makeGameLoop(
     box: MarshallBox, pitchPanel: JPanel,
     timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel
@@ -374,6 +383,7 @@ def makeGameLoop(
 
     def onTick(event: ActionEvent) = {
         let continue = tick(box, deltaTs, deltaTms);
+        refreshDisplay(box, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
         pitchPanel.repaint();
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
         redScoreLabel.setText("${Ref.get(box#redScore)}");

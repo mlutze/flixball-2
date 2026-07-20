@@ -495,12 +495,12 @@ def mkRing(cx: Float64, cy: Float64, radius: Float64, segments: Int32): Body \ I
     let body = new Body();
     let n = Int32.toFloat64(segments);
     foreach (i <- List.range(0, segments)) {
-        let a1 = 2.0 * Math.pi() * Int32.toFloat64(i)     / n;
-        let a2 = 2.0 * Math.pi() * Int32.toFloat64(i + 1) / n;
-        let p1 = new Vector2(cx + radius * Math.cos(a1),
-                             cy + radius * Math.sin(a1));
-        let p2 = new Vector2(cx + radius * Math.cos(a2),
-                             cy + radius * Math.sin(a2));
+        let a1 = 2.0 * Trig.pi() * Int32.toFloat64(i)     / n;
+        let a2 = 2.0 * Trig.pi() * Int32.toFloat64(i + 1) / n;
+        let p1 = new Vector2(cx + radius * Trig.cos(a1),
+                             cy + radius * Trig.sin(a1));
+        let p2 = new Vector2(cx + radius * Trig.cos(a2),
+                             cy + radius * Trig.sin(a2));
         discard body.addFixture(Geometry.createSegment(p1, p2), 1.0, 0.3, 0.0)
     };
     body.setMass(MassType.INFINITE);

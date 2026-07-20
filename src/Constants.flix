@@ -39,11 +39,11 @@ mod Constants {
     pub def playerMass(): Float64 = 80.0
 
     // revisit: this is 2-D
-    pub def ballVolume(): Float64 = 4.0 / 3.0 * Math.pi() * ballRadius() * ballRadius() * ballRadius()
+    pub def ballVolume(): Float64 = 4.0 / 3.0 * Trig.pi() * ballRadius() * ballRadius() * ballRadius()
 
     pub def ballDensity(): Float64 = ballMass() / ballVolume()
 
-    pub def playerVolume(): Float64 = 4.0 / 3.0 * Math.pi() * playerRadius() * playerRadius() * playerRadius()
+    pub def playerVolume(): Float64 = 4.0 / 3.0 * Trig.pi() * playerRadius() * playerRadius() * playerRadius()
 
     pub def playerDensity(): Float64 = playerMass() / playerVolume()
 

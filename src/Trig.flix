@@ -1,4 +1,4 @@
-mod Math {
+mod Trig {
     import java.lang.{Math => JMath}
 
     pub def pi(): Float64 = JMath.PI

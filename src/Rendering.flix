@@ -84,7 +84,7 @@ mod Rendering {
         let aRadius = penaltyArcDist();
         let aDiameter = aRadius * 2.0;
         let halfChord = penaltyBoxDepth() - penaltySpotDist();
-        let halfAngleDeg = Math.toDegrees(Math.acos(halfChord / aRadius));
+        let halfAngleDeg = Trig.toDegrees(Trig.acos(halfChord / aRadius));
         let fullAngleDeg = 2.0 * halfAngleDeg;
         // west arc opens toward +x (through 0°); east arc opens toward -x (through 180°)
         g.draw(new Arc2D$Double(psxW - aRadius, psyW - aRadius, aDiameter, aDiameter, -halfAngleDeg, fullAngleDeg, Arc2D.OPEN));

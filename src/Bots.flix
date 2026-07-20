@@ -108,10 +108,10 @@ mod Bots {
         let ballToGoal = Direction.fromTo(pitch#ballLocation, goal);
         let ballToMe = Direction.fromTo(pitch#ballLocation, me#location);
         let angle = Direction.angle(ballToGoal, ballToMe);
-        if (Float64.abs(angle) < Math.pi() * 0.75) {
+        if (Float64.abs(angle) < Trig.pi() * 0.75) {
             // we are between the ball and the goal, go tangent
             let sign = angle / Float64.abs(angle);
-            Direction.addAngle(ballToMe, sign * Math.pi() * 0.5)
+            Direction.addAngle(ballToMe, sign * Trig.pi() * 0.5)
         } else {
             shootHarder(goal, pitch, me)
         }
@@ -170,7 +170,7 @@ mod Bots {
 
         let theta = Direction.angle(ballToGoal, meToTarget);
         let adjustedTheta = theta * 1.0;
-        let boundedTheta = adjustedTheta |> Float64.max(-Math.pi() / 2.0) |> Float64.min(Math.pi() / 2.0);
+        let boundedTheta = adjustedTheta |> Float64.max(-Trig.pi() / 2.0) |> Float64.min(Trig.pi() / 2.0);
 
         Direction.addAngle(meToTarget, boundedTheta)
     }
@@ -197,12 +197,12 @@ mod Bots {
         let target = contactPoint(goal, pitch);
         let ballToGoal = Direction.fromTo(target, goal);
 
-        let ballToCenterLeft = Direction.addAngle(ballToGoal, Math.pi() / 2.0);
+        let ballToCenterLeft = Direction.addAngle(ballToGoal, Trig.pi() / 2.0);
         let ballToCenterLeftDisp = Displacement.inDirection(ballToCenterLeft, radius);
         let centerLeft = Displacement.apply(ballToCenterLeftDisp, target);
         let centerLeftDist = Location.distance(me#location, centerLeft);
 
-        let ballToCenterRight = Direction.addAngle(ballToGoal, -Math.pi() / 2.0);
+        let ballToCenterRight = Direction.addAngle(ballToGoal, -Trig.pi() / 2.0);
         let ballToCenterRightDisp = Displacement.inDirection(ballToCenterRight, radius);
         let centerRight = Displacement.apply(ballToCenterRightDisp, target);
         let centerRightDist = Location.distance(me#location, centerRight);
@@ -215,7 +215,7 @@ mod Bots {
         };
         let meToCenter = Displacement.fromTo(me#location, center);
         let d_c = Displacement.distance(meToCenter);
-        let theta_t = rot * Math.asin(radius / d_c);
+        let theta_t = rot * Trig.asin(radius / d_c);
         let meToCenterDir = Displacement.getDirection(meToCenter);
         Direction.addAngle(meToCenterDir, theta_t)
     }
@@ -318,7 +318,7 @@ mod Bots {
         if (mySpeed < 0.01 or ballSpeed < 0.01) {
             runAtBall(pitch, me)
         } else {
-            let theta = Math.asin(ballSpeed / mySpeed * Math.sin(epsilon));
+            let theta = Trig.asin(ballSpeed / mySpeed * Trig.sin(epsilon));
             let meToBall = Direction.invert(ballToMe);
             Direction.addAngle(meToBall, theta)
         }

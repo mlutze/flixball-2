@@ -6,7 +6,7 @@ pub type alias Velocity = {
 
 mod Velocity {
     pub def toDirection(v: Velocity): Direction = {
-        let len = Math.sqrt(v#dx * v#dx + v#dy * v#dy);
+        let len = Trig.sqrt(v#dx * v#dx + v#dy * v#dy);
         if (len == 0.0)
             ({ ux = 0.0, uy = 0.0 })
         else

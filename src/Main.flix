@@ -230,8 +230,14 @@ def resetGame(box: MarshallBox): Unit \ IO = {
     // rebuild pre-game barriers
     MarshallBox.clearJunk(box);
     let preGameRing = mkRing(0.0, 0.0, Constants.centerCircleRadius(), 32);
+    let (wallN, wallS) = mkCenterWalls();
     box#world.addBody(preGameRing);
-    MutList.push(preGameRing, box#preGameJunk)
+    box#world.addBody(wallN);
+    box#world.addBody(wallS);
+    box#preGameJunk
+        !> MutList.push(preGameRing)
+        !> MutList.push(wallN)
+        |> MutList.push(wallS)
 }
 
 def randomStartFor(team: Team): Location \ IO = match team {
@@ -554,5 +560,21 @@ def mkRing(cx: Float64, cy: Float64, radius: Float64, segments: Int32): Body \ I
     };
     body.setMass(MassType.INFINITE);
     body
+}
+
+def mkCenterWalls(): (Body, Body) \ IO = {
+    let ringDispN = Displacement.inDirection(Direction.north(), Constants.centerCircleRadius());
+    let ringN = Displacement.apply(ringDispN, Locations.center());
+
+    let ringDispS = Displacement.inDirection(Direction.south(), Constants.centerCircleRadius());
+    let ringS = Displacement.apply(ringDispS, Locations.center());
+
+    let farNorth = Displacement.inDirection(Direction.north(), 1000.0);
+    let farSouth = Displacement.inDirection(Direction.south(), 1000.0);
+
+    (
+        mkWall(ringN, Displacement.apply(farNorth, ringN)),
+        mkWall(ringS, Displacement.apply(farSouth, ringS))
+    )
 }
 

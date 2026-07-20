@@ -128,4 +128,14 @@ mod Locations {
         x =  pitchLength() / 2.0 - penaltySpotDist(),
         y = 0.0
     }
+
+    pub def centerN(): Location = {
+        x = 0.0,
+        y = pitchWidth() / 2.0
+    }
+
+    pub def centerS(): Location = {
+        x = 0.0,
+        y = -pitchWidth() / 2.0
+    }
 }

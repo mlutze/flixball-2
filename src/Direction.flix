@@ -51,6 +51,26 @@ mod Direction {
         uy = 0.0
     }
 
+    pub def northeast(): Direction = {
+        ux =  Trig.sqrt(2.0) / 2.0,
+        uy =  Trig.sqrt(2.0) / 2.0
+    }
+
+    pub def northwest(): Direction = {
+        ux = -Trig.sqrt(2.0) / 2.0,
+        uy = Trig.sqrt(2.0) / 2.0
+    }
+
+    pub def southeast(): Direction = {
+        ux = Trig.sqrt(2.0) / 2.0,
+        uy = -Trig.sqrt(2.0) / 2.0
+    }
+
+    pub def southwest(): Direction = {
+        ux = -Trig.sqrt(2.0) / 2.0,
+        uy = -Trig.sqrt(2.0) / 2.0
+    }
+
     pub def invert(dir: Direction): Direction = {
         ux = -dir#ux,
         uy = -dir#uy

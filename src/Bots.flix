@@ -136,8 +136,12 @@ mod Bots {
     }
 
     pub def closeCircleAndShoot(pitch: Pitch, me: Player): Direction = {
-        let goal = goalCenter(Team.opp(me#team));
-        closeCircleAndShootAt(goal, pitch, me)
+        if (isBehindGoal(me#location) and not isBehindGoal(pitch#ballLocation)) {
+            escapeBehindGoal(pitch, me)
+        } else {
+            let goal = goalCenter(Team.opp(me#team));
+            closeCircleAndShootAt(goal, pitch, me)
+        }
     }
 
     def closeCircleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
@@ -190,11 +194,15 @@ mod Bots {
     }
 
     def approachCircleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
-        let meToBall = Location.distance(me#location, pitch#ballLocation);
-        if (meToBall <= 6.0) {
-            circleAndShootAt(goal, pitch, me)
+        if (isBehindGoal(me#location) and not isBehindGoal(pitch#ballLocation)) {
+            escapeBehindGoal(pitch, me)
         } else {
-            approachCircle(goal, pitch, me)
+            let meToBall = Location.distance(me#location, pitch#ballLocation);
+            if (meToBall <= 6.0) {
+                circleAndShootAt(goal, pitch, me)
+            } else {
+                approachCircle(goal, pitch, me)
+            }
         }
     }
 
@@ -329,8 +337,32 @@ mod Bots {
         let xE = Locations.goalBackNE()#x;
         let yMax = Locations.goalBackNW()#y;
         let yMin = Locations.goalBackSW()#y;
-        loc#y < yMax and loc#y < yMin and (loc#x < xW or loc#x > xE)
+        loc#y < yMax and loc#y > yMin and (loc#x < xW or loc#x > xE)
     }
 
+    def escapeBehindGoal(_pitch: Pitch, me: Player): Direction = {
+        // go to the closest corner of the goal
+        let nw = Displacement.apply(
+            Displacement.inDirection(Direction.northwest(), Constants.playerRadius()),
+            Locations.goalBackNW()
+        );
+        let ne = Displacement.apply(
+            Displacement.inDirection(Direction.northeast(), Constants.playerRadius()),
+            Locations.goalBackNE()
+        );
+        let sw = Displacement.apply(
+            Displacement.inDirection(Direction.southwest(), Constants.playerRadius()),
+            Locations.goalBackSW()
+        );
+        let se = Displacement.apply(
+            Displacement.inDirection(Direction.southeast(), Constants.playerRadius()),
+            Locations.goalBackSE()
+        );
+        
+        let locs = Nel(nw, List#{ne, sw, se});
+        let cmp = Utils.mkCmp(loc -> Location.distance(me#location, loc));
+        let best = locs |> Nel.minimumBy(cmp);
 
+        Direction.fromTo(me#location, best)
+    }
 }

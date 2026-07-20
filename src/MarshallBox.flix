@@ -8,8 +8,8 @@ type alias MarshallBox = {
     state = Ref[GameState, Static],
     timeMs = Ref[Int32, Static],
     preGameJunk = MutList[Body, Static],
-    redScore = Ref[Int32, Static],
-    blueScore = Ref[Int32, Static]
+    westScore = Ref[Int32, Static],
+    eastScore = Ref[Int32, Static]
 }
 
 mod MarshallBox {

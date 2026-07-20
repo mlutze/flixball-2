@@ -54,9 +54,9 @@ def main(): Unit \ IO = {
     if (args == List#{"-H"}) {
         let box = init();
         runGame(box);
-        let redScore = Ref.get(box#redScore);
-        let blueScore = Ref.get(box#blueScore);
-        println("${redScore},${blueScore}")
+        let westScore = Ref.get(box#westScore);
+        let eastScore = Ref.get(box#eastScore);
+        println("${westScore},${eastScore}")
     } else {
 
         let marshallBox = init();
@@ -65,16 +65,16 @@ def main(): Unit \ IO = {
         let timeLabel = new JLabel();
         timeLabel.setText("0.0");
         
-        let redScoreLabel = new JLabel();
-        redScoreLabel.setForeground(Color.RED);
-        redScoreLabel.setText("0");
-        let blueScoreLabel = new JLabel();
-        blueScoreLabel.setForeground(Color.BLUE);
-        blueScoreLabel.setText("0");
+        let westScoreLabel = new JLabel();
+        westScoreLabel.setForeground(Color.RED);
+        westScoreLabel.setText("0");
+        let eastScoreLabel = new JLabel();
+        eastScoreLabel.setForeground(Color.BLUE);
+        eastScoreLabel.setText("0");
 
-        scorePanel.add(redScoreLabel);
+        scorePanel.add(westScoreLabel);
         scorePanel.add(timeLabel);
-        scorePanel.add(blueScoreLabel);
+        scorePanel.add(eastScoreLabel);
 
         let forcesRef = Ref.fresh(Static, false);
 
@@ -105,7 +105,7 @@ def main(): Unit \ IO = {
             }
         };
 
-        let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
+        let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
 
         let buttonPanel = new JPanel();
         let startButton = new JButton("Start");
@@ -128,7 +128,7 @@ def main(): Unit \ IO = {
 
         def onClickReset(_): Unit = {
             resetGame(marshallBox);
-            refreshDisplay(marshallBox, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel)
+            refreshDisplay(marshallBox, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel)
         };
 
         resetButton.addActionListener(Utils.mkActionListener(onClickReset));
@@ -202,8 +202,8 @@ def init(): MarshallBox \ IO = {
         timeMs = Ref.fresh(Static, 0),
         state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
         preGameJunk = MutList.empty(Static),
-        redScore = Ref.fresh(Static, 0),
-        blueScore = Ref.fresh(Static, 0)
+        westScore = Ref.fresh(Static, 0),
+        eastScore = Ref.fresh(Static, 0)
     };
 
     resetGame(box);
@@ -224,8 +224,8 @@ def resetGame(box: MarshallBox): Unit \ IO = {
     Ref.put(-Constants.pregameMs(), box#timeMs);
     Ref.put(GameState.PreGame({ remainingMs = Constants.pregameMs() }), box#state);
 
-    Ref.put(0, box#redScore);
-    Ref.put(0, box#blueScore);
+    Ref.put(0, box#westScore);
+    Ref.put(0, box#eastScore);
 
     // rebuild pre-game barriers
     MarshallBox.clearJunk(box);
@@ -310,7 +310,7 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
             match getBallLocationClass(box) {
                 // red has scored
                 case LocationClass.EastGoal =>
-                    box#redScore |> Ref.transform(s -> s + 1);
+                    box#westScore |> Ref.transform(s -> s + 1);
                     let newState = GameState.PostGoal({
                         remainingMs = Constants.postGoalMs(),
                         team = Team.West
@@ -319,7 +319,7 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
 
                 // blue has scored
                 case LocationClass.WestGoal =>
-                    box#blueScore |> Ref.transform(s -> s + 1);
+                    box#eastScore |> Ref.transform(s -> s + 1);
                     let newState = GameState.PostGoal({
                         remainingMs = Constants.postGoalMs(),
                         team = Team.East
@@ -373,27 +373,27 @@ def runGame(box: MarshallBox): Unit \ IO = {
     loop()
 }
 
-def refreshDisplay(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel): Unit \ IO = {
+def refreshDisplay(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel): Unit \ IO = {
     pitchPanel.repaint();
     timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
-    redScoreLabel.setText("${Ref.get(box#redScore)}");
-    blueScoreLabel.setText("${Ref.get(box#blueScore)}")
+    westScoreLabel.setText("${Ref.get(box#westScore)}");
+    eastScoreLabel.setText("${Ref.get(box#eastScore)}")
 }
 
 def makeGameLoop(
     box: MarshallBox, pitchPanel: JPanel,
-    timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel
+    timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel
 ): Timer \ IO = {
     let deltaTs  = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def onTick(event: ActionEvent) = {
         let continue = tick(box, deltaTs, deltaTms);
-        refreshDisplay(box, pitchPanel, timeLabel, redScoreLabel, blueScoreLabel);
+        refreshDisplay(box, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
         pitchPanel.repaint();
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
-        redScoreLabel.setText("${Ref.get(box#redScore)}");
-        blueScoreLabel.setText("${Ref.get(box#blueScore)}");
+        westScoreLabel.setText("${Ref.get(box#westScore)}");
+        eastScoreLabel.setText("${Ref.get(box#eastScore)}");
         if (not continue) {
             let timer = unchecked_cast(event.getSource() as Timer);
             timer.stop()

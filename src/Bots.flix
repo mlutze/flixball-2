@@ -20,6 +20,11 @@ mod Bots {
         "Shoot Smarter West" => mkBot(shootSmarterWest)
     }
 
+    def goalCenter(team: Team): Location = match team {
+        case Team.East => Locations.goalCenterE()
+        case Team.West => Locations.goalCenterW()
+    }
+
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
         Direction.fromTo(me#location, pitch#ballLocation)
     }
@@ -53,10 +58,7 @@ mod Bots {
 
     // stays halfway between own goal and the ball (Blue defends left, Red defends right)
     pub def defendOwnGoal(pitch: Pitch, me: Player): Direction = {
-        let ownGoal = match me#team {
-            case Team.West => Locations.goalCenterW()
-            case Team.East => Locations.goalCenterE()
-        };
+        let ownGoal = goalCenter(me#team);
         let target = {
             x = (ownGoal#x + pitch#ballLocation#x) / 2.0,
             y = pitch#ballLocation#y / 2.0

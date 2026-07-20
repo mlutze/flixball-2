@@ -184,9 +184,9 @@ def init(): MarshallBox \ IO = {
     // bodyGB.translate(randomXEast(), randomY());
     // world.addBody(bodyGB);
 
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShootEast) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShootEast) };
     // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
-    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
+    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
     // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
     let players = Map#{
         "Red Striker" => playerSR,
@@ -242,8 +242,8 @@ def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = 
         player#body.setAtRest(true);
         let y = randomY();
         let x = match player#team {
-            case Team.Red => randomXWest()
-            case Team.Blue => randomXEast()
+            case Team.West => randomXWest()
+            case Team.East => randomXEast()
         };
         player#body.translateToOrigin();
         player#body.translate(x, y)
@@ -274,7 +274,7 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
                     box#redScore |> Ref.transform(s -> s + 1);
                     let newState = GameState.PostGoal({
                         remainingMs = Constants.postGoalMs(),
-                        team = Team.Red
+                        team = Team.West
                     });
                     Ref.put(newState, box#state)
 
@@ -283,7 +283,7 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
                     box#blueScore |> Ref.transform(s -> s + 1);
                     let newState = GameState.PostGoal({
                         remainingMs = Constants.postGoalMs(),
-                        team = Team.Blue
+                        team = Team.East
                     });
                     Ref.put(newState, box#state)
 

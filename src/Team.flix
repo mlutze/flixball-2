@@ -1,6 +1,6 @@
 mod Team {
     pub enum Team {
-        case Blue
-        case Red
+        case East
+        case West
     }
 }

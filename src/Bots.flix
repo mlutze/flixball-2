@@ -54,8 +54,8 @@ mod Bots {
     // stays halfway between own goal and the ball (Blue defends left, Red defends right)
     pub def defendOwnGoal(pitch: Pitch, me: Player): Direction = {
         let ownGoal = match me#team {
-            case Team.Blue => Locations.goalCenterW()
-            case Team.Red  => Locations.goalCenterE()
+            case Team.West => Locations.goalCenterW()
+            case Team.East => Locations.goalCenterE()
         };
         let target = {
             x = (ownGoal#x + pitch#ballLocation#x) / 2.0,

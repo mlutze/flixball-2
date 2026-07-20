@@ -110,8 +110,8 @@ mod Rendering {
         let cornerY = player#location#y - playerRadius();
         let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius() * 2.0, playerRadius() * 2.0);
         let color = match player#team {
-            case Team.Red => Color.RED
-            case Team.Blue => Color.BLUE
+            case Team.West => Color.RED
+            case Team.East => Color.BLUE
         };
         g.setColor(color);
         g.fill(circle);

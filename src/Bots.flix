@@ -1,5 +1,4 @@
 mod Bots {
-    import java.lang.Math
 
     pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
         (pitch, player) -> eidentity(f(pitch, player))
@@ -21,9 +20,9 @@ mod Bots {
     }
 
     // picks a random direction each tick — jittery but fun as a baseline
-    pub def wander(_pitch: Pitch, _me: Player): Direction = {
-        let dx = unsafe IO { Math.random() - 0.5 };
-        let dy = unsafe IO { Math.random() - 0.5 };
+    pub def wander(_pitch: Pitch, _me: Player): Direction \ Random = {
+        let dx = Random.randFloat64() - 0.5;
+        let dy = Random.randFloat64() - 0.5;
         Displacement.getDirection({ dx = dx, dy = dy })
     }
 
@@ -109,10 +108,10 @@ mod Bots {
         let ballToGoal = Direction.fromTo(pitch#ballLocation, goal);
         let ballToMe = Direction.fromTo(pitch#ballLocation, me#location);
         let angle = Direction.angle(ballToGoal, ballToMe);
-        if (Float64.abs(angle) < Math.PI * 0.75) {
+        if (Float64.abs(angle) < Math.pi() * 0.75) {
             // we are between the ball and the goal, go tangent
             let sign = angle / Float64.abs(angle);
-            Direction.addAngle(ballToMe, sign * Math.PI * 0.5)
+            Direction.addAngle(ballToMe, sign * Math.pi() * 0.5)
         } else {
             shootHarder(goal, pitch, me)
         }
@@ -171,7 +170,7 @@ mod Bots {
 
         let theta = Direction.angle(ballToGoal, meToTarget);
         let adjustedTheta = theta * 1.0;
-        let boundedTheta = adjustedTheta |> Float64.max(-Math.PI / 2.0) |> Float64.min(Math.PI / 2.0);
+        let boundedTheta = adjustedTheta |> Float64.max(-Math.pi() / 2.0) |> Float64.min(Math.pi() / 2.0);
 
         Direction.addAngle(meToTarget, boundedTheta)
     }
@@ -198,12 +197,12 @@ mod Bots {
         let target = contactPoint(goal, pitch);
         let ballToGoal = Direction.fromTo(target, goal);
 
-        let ballToCenterLeft = Direction.addAngle(ballToGoal, Math.PI / 2.0);
+        let ballToCenterLeft = Direction.addAngle(ballToGoal, Math.pi() / 2.0);
         let ballToCenterLeftDisp = Displacement.inDirection(ballToCenterLeft, radius);
         let centerLeft = Displacement.apply(ballToCenterLeftDisp, target);
         let centerLeftDist = Location.distance(me#location, centerLeft);
 
-        let ballToCenterRight = Direction.addAngle(ballToGoal, -Math.PI / 2.0);
+        let ballToCenterRight = Direction.addAngle(ballToGoal, -Math.pi() / 2.0);
         let ballToCenterRightDisp = Displacement.inDirection(ballToCenterRight, radius);
         let centerRight = Displacement.apply(ballToCenterRightDisp, target);
         let centerRightDist = Location.distance(me#location, centerRight);
@@ -216,7 +215,7 @@ mod Bots {
         };
         let meToCenter = Displacement.fromTo(me#location, center);
         let d_c = Displacement.distance(meToCenter);
-        let theta_t = unsafe IO { rot * Math.asin(radius / d_c) };
+        let theta_t = rot * Math.asin(radius / d_c);
         let meToCenterDir = Displacement.getDirection(meToCenter);
         Direction.addAngle(meToCenterDir, theta_t)
     }
@@ -319,7 +318,7 @@ mod Bots {
         if (mySpeed < 0.01 or ballSpeed < 0.01) {
             runAtBall(pitch, me)
         } else {
-            let theta = unsafe IO { Math.asin(ballSpeed / mySpeed * Math.sin(epsilon)) };
+            let theta = Math.asin(ballSpeed / mySpeed * Math.sin(epsilon));
             let meToBall = Direction.invert(ballToMe);
             Direction.addAngle(meToBall, theta)
         }

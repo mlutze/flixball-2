@@ -1,6 +1,4 @@
 mod Constants {
-    import java.lang.Math
-
     // pitch dimensions in meters; taken from https://commons.wikimedia.org/wiki/File:Association_Football_field_diagram_-en.svg
     pub def pitchLength(): Float64 = 105.0
 
@@ -41,11 +39,11 @@ mod Constants {
     pub def playerMass(): Float64 = 80.0
 
     // revisit: this is 2-D
-    pub def ballVolume(): Float64 = 4.0 / 3.0 * Math.PI * ballRadius() * ballRadius() * ballRadius()
+    pub def ballVolume(): Float64 = 4.0 / 3.0 * Math.pi() * ballRadius() * ballRadius() * ballRadius()
 
     pub def ballDensity(): Float64 = ballMass() / ballVolume()
 
-    pub def playerVolume(): Float64 = 4.0 / 3.0 * Math.PI * playerRadius() * playerRadius() * playerRadius()
+    pub def playerVolume(): Float64 = 4.0 / 3.0 * Math.pi() * playerRadius() * playerRadius() * playerRadius()
 
     pub def playerDensity(): Float64 = playerMass() / playerVolume()
 

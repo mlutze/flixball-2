@@ -12,7 +12,6 @@ import java.awt.geom.Line2D$Double
 import java.awt.geom.Rectangle2D$Double
 import java.awt.event.ActionListener
 import java.awt.event.ActionEvent
-import java.lang.Math
 import javax.swing.Timer
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -26,6 +25,8 @@ import org.dyn4j.world.World
 import java.awt.BorderLayout
 import javax.swing.JLabel
 import javax.swing.JCheckBox
+
+import java.lang.{Math => JMath}
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -212,15 +213,15 @@ def init(): MarshallBox \ IO = {
 }
 
 def randomY(): Float64 \ IO = {
-    (Math.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius())
+    (JMath.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius())
 }
 
 def randomXEast(): Float64 \ IO = {
-     Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+     JMath.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
 }
 
 def randomXWest(): Float64 \ IO = {
-    -Math.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+    -JMath.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
 }
 
 def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {
@@ -494,12 +495,12 @@ def mkRing(cx: Float64, cy: Float64, radius: Float64, segments: Int32): Body \ I
     let body = new Body();
     let n = Int32.toFloat64(segments);
     foreach (i <- List.range(0, segments)) {
-        let a1 = 2.0 * Math.PI * Int32.toFloat64(i)     / n;
-        let a2 = 2.0 * Math.PI * Int32.toFloat64(i + 1) / n;
-        let p1 = new Vector2(cx + radius * unsafe IO { Math.cos(a1) },
-                             cy + radius * unsafe IO { Math.sin(a1) });
-        let p2 = new Vector2(cx + radius * unsafe IO { Math.cos(a2) },
-                             cy + radius * unsafe IO { Math.sin(a2) });
+        let a1 = 2.0 * Math.pi() * Int32.toFloat64(i)     / n;
+        let a2 = 2.0 * Math.pi() * Int32.toFloat64(i + 1) / n;
+        let p1 = new Vector2(cx + radius * Math.cos(a1),
+                             cy + radius * Math.sin(a1));
+        let p2 = new Vector2(cx + radius * Math.cos(a2),
+                             cy + radius * Math.sin(a2));
         discard body.addFixture(Geometry.createSegment(p1, p2), 1.0, 0.3, 0.0)
     };
     body.setMass(MassType.INFINITE);

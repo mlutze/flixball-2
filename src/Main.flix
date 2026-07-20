@@ -184,10 +184,10 @@ def init(): MarshallBox \ IO = {
     // bodyGB.translate(randomXEast(), randomY());
     // world.addBody(bodyGB);
 
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShootEast) };
-    // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defendWest) };
-    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShootWest) };
-    // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defendEast) };
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShoot) };
+    // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.Red, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
+    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShoot) };
+    // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.Blue, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
     let players = Map#{
         "Red Striker" => playerSR,
         "Blue Striker" => playerSB

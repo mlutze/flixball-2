@@ -12,17 +12,19 @@ mod Bots {
         "Wander" => mkBot(wander),
         "Intercept Ball" => mkBot(interceptBall),
         "Defend own Goal" => mkBot(defendOwnGoal),
-        "Shoot East" => mkBot(shootEast),
-        "Shoot West" => mkBot(shootWest),
-        "Shoot Harder East" => mkBot(shootHarderEast),
-        "Shoot Harder West" => mkBot(shootHarderWest),
-        "Shoot Smarter East" => mkBot(shootSmarterEast),
-        "Shoot Smarter West" => mkBot(shootSmarterWest)
+        "Shoot" => mkBot(shoot),
+        "Shoot Harder" => mkBot(shootHarder),
+        "Shoot Smarter" => mkBot(shootSmarter)
     }
 
     def goalCenter(team: Team): Location = match team {
         case Team.East => Locations.goalCenterE()
         case Team.West => Locations.goalCenterW()
+    }
+
+    def goalposts(team: Team): (Location, Location) = match team {
+        case Team.East => (Locations.goalpostNE(), Locations.goalpostSE())
+        case Team.West => (Locations.goalpostNW(), Locations.goalpostSW())
     }
 
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
@@ -56,7 +58,7 @@ mod Bots {
         Direction.fromTo(me#location, future)
     }
 
-    // stays halfway between own goal and the ball (Blue defends left, Red defends right)
+    // stays halfway between own goal and the ball
     pub def defendOwnGoal(pitch: Pitch, me: Player): Direction = {
         let ownGoal = goalCenter(me#team);
         let target = {
@@ -66,17 +68,14 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
-    pub def shootEast(pitch: Pitch, me: Player): Direction = {
-        shoot(Locations.goalCenterE(), pitch, me)
-    }
-
-    pub def shootWest(pitch: Pitch, me: Player): Direction = {
-        shoot(Locations.goalCenterW(), pitch, me)
+    pub def shoot(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        shootAt(goal, pitch, me)
     }
 
     // go to the location where I'll be tangent to the ball,
     // and that tangent lines up with the goal
-    def shoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def shootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let ball = pitch#ballLocation;
         let goalBallDir = Direction.fromTo(goal, ball);
         let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
@@ -85,16 +84,13 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
-    pub def shootHarderEast(pitch: Pitch, me: Player): Direction = {
-        shootHarder(Locations.goalCenterE(), pitch, me)
-    }
-
-    pub def shootHarderWest(pitch: Pitch, me: Player): Direction = {
-        shootHarder(Locations.goalCenterW(), pitch, me)
+    pub def shootHarder(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        shootHarderAt(goal, pitch, me)
     }
 
     // like shoot, but ram the ball if we're close enough to lined up
-    def shootHarder(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def shootHarderAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let ball = pitch#ballLocation;
         let goalBallDir = Direction.fromTo(goal, ball);
         let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
@@ -111,17 +107,14 @@ mod Bots {
         }
     }
 
-    pub def shootSmarterEast(pitch: Pitch, me: Player): Direction = {
-        shootSmarter(Locations.goalCenterE(), pitch, me)
-    }
-
-    pub def shootSmarterWest(pitch: Pitch, me: Player): Direction = {
-        shootSmarter(Locations.goalCenterW(), pitch, me)
+    pub def shootSmarter(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        shootSmarterAt(goal, pitch, me)
     }
 
     // like shoot,
     // but if we are in front of the ball, go tangent to it instead
-    pub def shootSmarter(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def shootSmarterAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let ballToGoal = Direction.fromTo(pitch#ballLocation, goal);
         let ballToMe = Direction.fromTo(pitch#ballLocation, me#location);
         let angle = Direction.angle(ballToGoal, ballToMe);
@@ -130,54 +123,45 @@ mod Bots {
             let sign = angle / Float64.abs(angle);
             Direction.addAngle(ballToMe, sign * Trig.pi() * 0.5)
         } else {
-            shootHarder(goal, pitch, me)
+            shootHarderAt(goal, pitch, me)
         }
     }
 
-    pub def closeCircleAndShootEast(pitch: Pitch, me: Player): Direction = {
-        closeCircleAndShoot(Locations.goalCenterE(), pitch, me)
+    pub def closeCircleAndShoot(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        closeCircleAndShootAt(goal, pitch, me)
     }
 
-    pub def closeCircleAndShootWest(pitch: Pitch, me: Player): Direction = {
-        closeCircleAndShoot(Locations.goalCenterW(), pitch, me)
-    }
-
-    def closeCircleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def closeCircleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let disp = Displacement.fromTo(pitch#ballLocation, me#location);
         if (Displacement.distance(disp) > 5.0) {
             runAtBall(pitch, me)
         } else {
-            circleAndShoot(goal, pitch, me)
+            circleAndShootAt(goal, pitch, me)
         }
     }
 
-    pub def closeCircleAndShootHardEast(pitch: Pitch, me: Player): Direction = {
-        closeCircleAndShootHard(Locations.goalCenterE(), pitch, me)
+    pub def closeCircleAndShootHard(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        closeCircleAndShootHardAt(goal, pitch, me)
     }
 
-    pub def closeCircleAndShootHardWest(pitch: Pitch, me: Player): Direction = {
-        closeCircleAndShootHard(Locations.goalCenterW(), pitch, me)
-    }
-
-    def closeCircleAndShootHard(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def closeCircleAndShootHardAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let disp = Displacement.fromTo(pitch#ballLocation, me#location);
         // if I'm making contact with the ball, then keep going
         if (Displacement.distance(disp) < Constants.ballRadius() + Constants.playerRadius()) {
             me#velocity |> Velocity.toDirection
         } else {
-            closeCircleAndShoot(goal, pitch, me)
+            closeCircleAndShootAt(goal, pitch, me)
         }
     }
 
-    pub def circleAndShootEast(pitch: Pitch, me: Player): Direction = {
-        circleAndShoot(Locations.goalCenterE(), pitch, me)
+    pub def circleAndShoot(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        circleAndShootAt(goal, pitch, me)
     }
 
-    pub def circleAndShootWest(pitch: Pitch, me: Player): Direction = {
-        circleAndShoot(Locations.goalCenterW(), pitch, me)
-    }
-
-    def circleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def circleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         // runs in a circle that is tangent to the proper shooting angle
         // bug: this isn't quite the proper shooting angle because it does not take into account player / ball radius
 
@@ -192,18 +176,15 @@ mod Bots {
         Direction.addAngle(meToTarget, boundedTheta)
     }
 
-    pub def approachCircleAndShootEast(pitch: Pitch, me: Player): Direction = {
-        approachCircleAndShoot(Locations.goalCenterE(), pitch, me)
+    pub def approachCircleAndShoot(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        approachCircleAndShootAt(goal, pitch, me)
     }
 
-    pub def approachCircleAndShootWest(pitch: Pitch, me: Player): Direction = {
-        approachCircleAndShoot(Locations.goalCenterW(), pitch, me)
-    }
-
-    def approachCircleAndShoot(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def approachCircleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let meToBall = Location.distance(me#location, pitch#ballLocation);
         if (meToBall <= 6.0) {
-            circleAndShoot(goal, pitch, me)
+            circleAndShootAt(goal, pitch, me)
         } else {
             approachCircle(goal, pitch, me)
         }
@@ -246,17 +227,14 @@ mod Bots {
         Displacement.apply(ballTargetDisplacement, ball)
     }
 
-    pub def defendEast(pitch: Pitch, me: Player): Direction = {
-        defend(Locations.goalCenterE(), pitch, me)
-    }
-
-    pub def defendWest(pitch: Pitch, me: Player): Direction = {
-        defend(Locations.goalCenterW(), pitch, me)
+    pub def defend(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(me#team);
+        defendAt(goal, pitch, me)
     }
 
     // stay 1 meter in front of goal
     // on the line between the center of the goal and the ball
-    pub def defend(goal: Location, pitch: Pitch, me: Player): Direction = {
+    def defendAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let minY = Locations.goalpostSE()#y;
         let maxY = Locations.goalpostNE()#y;
         let targetY = pitch#ballLocation#y |> Float64.max(minY) |> Float64.min(maxY);
@@ -271,16 +249,13 @@ mod Bots {
         Direction.fromTo(me#location, target)
     }
 
-    pub def avoidGoalieEast(pitch: Pitch, me: Player): Direction \ BotState = {
-        avoidGoalie(Locations.goalpostNE(), Locations.goalpostSE(), pitch, me)
-    }
-
-    pub def avoidGoalieWest(pitch: Pitch, me: Player): Direction \ BotState = {
-        avoidGoalie(Locations.goalpostNW(), Locations.goalpostSW(), pitch, me)
+    pub def avoidGoalie(pitch: Pitch, me: Player): Direction \ BotState = {
+        let (goalpostN, goalpostS) = goalposts(Team.opp(me#team));
+        avoidGoalieAt(goalpostN, goalpostS, pitch, me)
     }
 
     // see what edge the goalie is closer to and kick toward the opposite edge of the goal
-    pub def avoidGoalie(goalpostN: Location, goalpostS: Location, pitch: Pitch, me: Player): Direction \ BotState = {
+    def avoidGoalieAt(goalpostN: Location, goalpostS: Location, pitch: Pitch, me: Player): Direction \ BotState = {
         let ball = pitch#ballLocation;
 
         // We assume the goalie is the closest player to the goal
@@ -288,11 +263,11 @@ mod Bots {
         let (_, goalie) = pitch#players
             |> Map.minimumValueBy(Utils.mkCmp(p -> Location.distance(p#location, goalCenter)))
             |> Utils.unsafeGetOpt; // we know there's at least one player, which is the one associated with the bot
-        
+
         // See which side the goalie is closer to
         let distN = Location.distance(goalie#location, goalpostN);
         let distS = Location.distance(goalie#location, goalpostS);
-        
+
         // if the goalie is significantly closer to the north side, then we will look south
         let newLookingNorth = if (distS - distN > 2.0) {
             false

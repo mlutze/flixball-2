@@ -244,159 +244,107 @@ def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = 
     timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)))
 }
 
-// TODO massive duplication here
-def runGame(box: MarshallBox): Unit \ IO = {
-    let deltaTs = 1.0 / 60.0;
-    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
+// runs one game tick; returns whether to keep going
+def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
+    let dirs = getAiDirections(box);
+    executeAi(box, dirs);
+    adjustDampening(box);
+    MarshallBox.addTimeMs(deltaTms, box);
 
-    def go() = {
-        let dirs = getAiDirections(box);
-        executeAi(box, dirs);
-        adjustDampening(box);
-        MarshallBox.addTimeMs(deltaTms, box);
+    let continue = match Ref.get(box#state) {
+        case GameState.PreGame({ remainingMs }) =>
+            if (remainingMs < 0) {
+                Ref.put(GameState.Play, box#state);
+                MarshallBox.clearJunk(box)
+            };
+            true
+        case GameState.Play =>
+            match getBallLocationClass(box) {
+                // red has scored
+                case LocationClass.EastGoal =>
+                    box#redScore |> Ref.transform(s -> s + 1);
+                    let newState = GameState.PostGoal({
+                        remainingMs = Constants.postGoalMs(),
+                        team = Team.Red
+                    });
+                    Ref.put(newState, box#state)
 
-        let continue = match Ref.get(box#state) {
-            case GameState.PreGame({ remainingMs }) =>
-                if (remainingMs < 0) {
-                    Ref.put(GameState.Play, box#state);
-                    MarshallBox.clearJunk(box)
-                };
-                true
-            case GameState.Play =>
-                match getBallLocationClass(box) {
-                    // red has scored
-                    case LocationClass.EastGoal =>
-                        box#redScore |> Ref.transform(s -> s + 1);
-                        let newState = GameState.PostGoal({
-                            remainingMs = Constants.postGoalMs(),
-                            team = Team.Red
+                // blue has scored
+                case LocationClass.WestGoal =>
+                    box#blueScore |> Ref.transform(s -> s + 1);
+                    let newState = GameState.PostGoal({
+                        remainingMs = Constants.postGoalMs(),
+                        team = Team.Blue
+                    });
+                    Ref.put(newState, box#state)
+
+                // no one scored, just check if it's over
+                case LocationClass.InBounds =>
+                    if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                        let newState = GameState.PostGame({
+                            remainingMs = Constants.postGameMs()
                         });
                         Ref.put(newState, box#state)
-
-                    // blue has scored
-                    case LocationClass.WestGoal =>
-                        box#blueScore |> Ref.transform(s -> s + 1);
-                        let newState = GameState.PostGoal({
-                            remainingMs = Constants.postGoalMs(),
-                            team = Team.Blue
+                    }
+                case LocationClass.OutOfBounds =>
+                    if (Ref.get(box#timeMs) > Constants.gameMs()) {
+                        let newState = GameState.PostGame({
+                            remainingMs = Constants.postGameMs()
                         });
                         Ref.put(newState, box#state)
-
-                    // no one scored, just check if it's over
-                    case LocationClass.InBounds =>
-                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
-                            let newState = GameState.PostGame({
-                                remainingMs = Constants.postGameMs()
-                            });
-                            Ref.put(newState, box#state)
-                        }
-                    case LocationClass.OutOfBounds =>
-                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
-                            let newState = GameState.PostGame({
-                                remainingMs = Constants.postGameMs()
-                            });
-                            Ref.put(newState, box#state)
-                        }
+                    }
                 };
-                true
-            case GameState.PostGoal({ remainingMs | _ }) =>
-                if (remainingMs < 0) {
-                    box#ball.translateToOrigin();
-                    box#ball.setAtRest(true);
-                    Ref.put(GameState.Play, box#state)
-                };
-                true
-            case GameState.PostGame({ remainingMs }) =>
-                if (remainingMs < 0) {
-                    Ref.put(GameState.Exit, box#state)
-                };
-                true
-            case GameState.Exit => 
-                false
-        };
-        box#world.step(1, deltaTs);
-        if (continue) {
-            go()
-        }
+            true
+        case GameState.PostGoal({ remainingMs | _ }) =>
+            if (remainingMs < 0) {
+                box#ball.translateToOrigin();
+                box#ball.setAtRest(true);
+                Ref.put(GameState.Play, box#state)
+            };
+            true
+        case GameState.PostGame({ remainingMs }) =>
+            if (remainingMs < 0) {
+                Ref.put(GameState.Exit, box#state)
+            };
+            true
+        case GameState.Exit =>
+            false
     };
-    go()
+    box#world.step(1, deltaTs);
+    continue
 }
 
-def makeGameLoop(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel): Timer \ IO = {
-    let deltaTs = 1.0 / 60.0;
+def runGame(box: MarshallBox): Unit \ IO = {
+    let deltaTs  = 1.0 / 60.0;
+    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
+    def loop() = {
+        if (tick(box, deltaTs, deltaTms)) { 
+            loop()
+        }
+    };
+    loop()
+}
+
+def makeGameLoop(
+    box: MarshallBox, pitchPanel: JPanel,
+    timeLabel: JLabel, redScoreLabel: JLabel, blueScoreLabel: JLabel
+): Timer \ IO = {
+    let deltaTs  = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
-
-    def go(event) = {
-        let dirs = getAiDirections(box);
-        executeAi(box, dirs);
-        adjustDampening(box);
-        MarshallBox.addTimeMs(deltaTms, box);
-
-        match Ref.get(box#state) {
-            case GameState.PreGame({ remainingMs }) =>
-                if (remainingMs < 0) {
-                    Ref.put(GameState.Play, box#state);
-                    MarshallBox.clearJunk(box)
-                }
-            case GameState.Play =>
-                match getBallLocationClass(box) {
-                    // red has scored
-                    case LocationClass.EastGoal =>
-                        box#redScore |> Ref.transform(s -> s + 1);
-                        let newState = GameState.PostGoal({
-                            remainingMs = Constants.postGoalMs(),
-                            team = Team.Red
-                        });
-                        Ref.put(newState, box#state)
-
-                    // blue has scored
-                    case LocationClass.WestGoal =>
-                        box#blueScore |> Ref.transform(s -> s + 1);
-                        let newState = GameState.PostGoal({
-                            remainingMs = Constants.postGoalMs(),
-                            team = Team.Blue
-                        });
-                        Ref.put(newState, box#state)
-
-                    // no one scored, nothing to do
-                    case LocationClass.InBounds =>
-                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
-                            let newState = GameState.PostGame({
-                                remainingMs = Constants.postGameMs()
-                            });
-                            Ref.put(newState, box#state)
-                        }
-                    case LocationClass.OutOfBounds =>
-                        if (Ref.get(box#timeMs) > Constants.gameMs()) {
-                            let newState = GameState.PostGame({
-                                remainingMs = Constants.postGameMs()
-                            });
-                            Ref.put(newState, box#state)
-                        }
-                }
-            case GameState.PostGoal({ remainingMs | _ }) =>
-                if (remainingMs < 0) {
-                    box#ball.translateToOrigin();
-                    box#ball.setAtRest(true);
-                    Ref.put(GameState.Play, box#state)
-                }
-            case GameState.PostGame({ remainingMs }) =>
-                if (remainingMs < 0) {
-                    Ref.put(GameState.Exit, box#state)
-                }
-            case GameState.Exit =>
-                let timer = unchecked_cast(event.getSource() as Timer);
-                timer.stop()
-        };
-        box#world.step(1, deltaTs);
+    def onTick(event: ActionEvent) = {
+        let continue = tick(box, deltaTs, deltaTms);
         pitchPanel.repaint();
         timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
         redScoreLabel.setText("${Ref.get(box#redScore)}");
-        blueScoreLabel.setText("${Ref.get(box#blueScore)}")
+        blueScoreLabel.setText("${Ref.get(box#blueScore)}");
+        if (not continue) {
+            let timer = unchecked_cast(event.getSource() as Timer);
+            timer.stop()
+        }
     };
 
-    new Timer(deltaTms, Utils.mkActionListener(go))
+    new Timer(deltaTms, Utils.mkActionListener(onTick))
 }
 
 def formatTimeMs(ms: Int32): String = {

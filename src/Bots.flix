@@ -6,6 +6,20 @@ mod Bots {
     }
 
 
+    pub def bots(): Map[String, Bot] = Map#{
+        "Stay Still" => mkBot(stayStill),
+        "Run at Ball" => mkBot(runAtBall),
+        "Wander" => mkBot(wander),
+        "Intercept Ball" => mkBot(interceptBall),
+        "Defend own Goal" => mkBot(defendOwnGoal),
+        "Shoot East" => mkBot(shootEast),
+        "Shoot West" => mkBot(shootWest),
+        "Shoot Harder East" => mkBot(shootHarderEast),
+        "Shoot Harder West" => mkBot(shootHarderWest),
+        "Shoot Smarter East" => mkBot(shootSmarterEast),
+        "Shoot Smarter West" => mkBot(shootSmarterWest)
+    }
+
     pub def runAtBall(pitch: Pitch, me: Player): Direction = {
         Direction.fromTo(me#location, pitch#ballLocation)
     }

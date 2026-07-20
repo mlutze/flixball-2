@@ -1,4 +1,5 @@
 mod Bots {
+    use Math.Random
 
     pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
         (pitch, player) -> eidentity(f(pitch, player))
@@ -21,8 +22,8 @@ mod Bots {
 
     // picks a random direction each tick — jittery but fun as a baseline
     pub def wander(_pitch: Pitch, _me: Player): Direction \ Random = {
-        let dx = Random.randFloat64() - 0.5;
-        let dy = Random.randFloat64() - 0.5;
+        let dx = Random.randomFloat64() - 0.5;
+        let dy = Random.randomFloat64() - 0.5;
         Displacement.getDirection({ dx = dx, dy = dy })
     }
 

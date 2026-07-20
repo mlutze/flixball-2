@@ -46,6 +46,8 @@ use Constants.playerForce
 
 use Rendering.renderPitch
 
+use Math.Random
+
 // The main entry point.
 def main(): Unit \ IO = {
     let args = run Sys.Env.getArgs() with Sys.Env.runWithIO;
@@ -213,15 +215,21 @@ def init(): MarshallBox \ IO = {
 }
 
 def randomY(): Float64 \ IO = {
-    (JMath.random() - 0.5) * (pitchWidth() - 2.0 * playerRadius())
+    run {
+        (Random.randomFloat64() - 0.5) * (pitchWidth() - 2.0 * playerRadius())
+    } with Random.runWithIO
 }
 
 def randomXEast(): Float64 \ IO = {
-     JMath.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+    run {
+        Random.randomFloat64() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+    } with Random.runWithIO
 }
 
 def randomXWest(): Float64 \ IO = {
-    -JMath.random() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+    run {
+        -Random.randomFloat64() * (pitchLength() / 2.0 - 2.0 * playerRadius())
+    } with Random.runWithIO
 }
 
 def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {

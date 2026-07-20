@@ -169,35 +169,34 @@ def init(): MarshallBox \ IO = {
     world.addBody(ball);
     addGoalWalls(world);
 
+    let players = MutMap.empty(Static);
+
     let bodySR = mkPlayer();
     world.addBody(bodySR);
+    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShoot) };
+    players |> MutMap.put("West Striker", playerSR);
 
-    // let bodyGR = mkPlayer();
-    // world.addBody(bodyGR);
+    let bodyGR = mkPlayer();
+    world.addBody(bodyGR);
+    let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
+    players |> MutMap.put("West Goalie", playerGR);
 
     let bodySB = mkPlayer();
     world.addBody(bodySB);
-
-    // let bodyGB = mkPlayer();
-    // world.addBody(bodyGB);
-
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShoot) };
-    // let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
     let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShoot) };
-    // let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
-    let players = Map#{
-        "Red Striker" => playerSR,
-        "Blue Striker" => playerSB
-        // "Red Goalie" => playerGR,
-        // "Blue Goalie" => playerGB
-    };
+    players |> MutMap.put("East Striker", playerSB);
+
+    let bodyGB = mkPlayer();
+    world.addBody(bodyGB);
+    let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
+    players |> MutMap.put("East Goalie", playerGB);
 
     // TODO add a check that names are unique
 
     // All the refs here are placeholders
     let box = {
         world = world,
-        players = players,
+        players = players |> MutMap.toMap,
         ball = ball,
         timeMs = Ref.fresh(Static, 0),
         state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),

@@ -9,12 +9,20 @@ mod Bots {
     pub def bots(): Map[String, Bot] = Map#{
         "Stay Still" => mkBot(stayStill),
         "Run at Ball" => mkBot(runAtBall),
+        "Run from Ball" => mkBot(runFromBall),
+        "Run at Future Ball" => mkBot(runAtFutureBall),
         "Wander" => mkBot(wander),
         "Intercept Ball" => mkBot(interceptBall),
+        "Defend" => mkBot(defend),
         "Defend own Goal" => mkBot(defendOwnGoal),
+        "Avoid Goalie" => mkBot(avoidGoalie),
         "Shoot" => mkBot(shoot),
         "Shoot Harder" => mkBot(shootHarder),
-        "Shoot Smarter" => mkBot(shootSmarter)
+        "Shoot Smarter" => mkBot(shootSmarter),
+        "Circle and Shoot" => mkBot(circleAndShoot),
+        "Close Circle and Shoot" => mkBot(closeCircleAndShoot),
+        "Close Circle and Shoot Hard" => mkBot(closeCircleAndShootHard),
+        "Approach, Circle, and Shoot" => mkBot(approachCircleAndShoot)
     }
 
     def goalCenter(team: Team): Location = match team {

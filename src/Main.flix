@@ -169,7 +169,8 @@ def init(): MarshallBox \ IO = {
     addGoalWalls(world);
 
     let bodySR = mkPlayer();
-    bodySR.translate(randomXWest(), randomY());
+    let bodySRLoc = randomStartWest();
+    bodySR.translate(bodySRLoc#x, bodySRLoc#y);
     world.addBody(bodySR);
 
     // let bodyGR = mkPlayer();
@@ -177,7 +178,8 @@ def init(): MarshallBox \ IO = {
     // world.addBody(bodyGR);
 
     let bodySB = mkPlayer();
-    bodySB.translate(randomXEast(), randomY());
+    let bodySBLoc = randomStartEast();
+    bodySB.translate(bodySBLoc#x, bodySBLoc#y);
     world.addBody(bodySB);
 
     // let bodyGB = mkPlayer();
@@ -230,6 +232,35 @@ def randomXWest(): Float64 \ IO = {
     run {
         -Random.randomFloat64() * (pitchLength() / 2.0 - 2.0 * playerRadius())
     } with Random.runWithIO
+}
+
+def randomStartWest(): Location \ IO = {
+    let loc = {
+        x = randomXWest(),
+        y = randomY()
+    };
+    let distance = Location.distance(loc, Locations.center());
+    let minDistance = Constants.centerCircleRadius() + Constants.playerRadius();
+    // if it's too close then just try again
+    if (distance < minDistance) {
+        randomStartWest()
+    } else {
+        loc
+    }
+}
+def randomStartEast(): Location \ IO = {
+    let loc = {
+        x = randomXEast(),
+        y = randomY()
+    };
+    let distance = Location.distance(loc, Locations.center());
+    let minDistance = Constants.centerCircleRadius() + Constants.playerRadius();
+    // if it's too close then just try again
+    if (distance < minDistance) {
+        randomStartWest()
+    } else {
+        loc
+    }
 }
 
 def reset(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel): Unit \ IO = {

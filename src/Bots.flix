@@ -22,7 +22,8 @@ mod Bots {
         "Circle and Shoot" => mkBot(circleAndShoot),
         "Close Circle and Shoot" => mkBot(closeCircleAndShoot),
         "Close Circle and Shoot Hard" => mkBot(closeCircleAndShootHard),
-        "Approach, Circle, and Shoot" => mkBot(approachCircleAndShoot)
+        "Approach, Circle, and Shoot" => mkBot(approachCircleAndShoot),
+        "Approach, Circle, and Shoot Hard" => mkBot(approachCircleAndShootHard)
     }
 
     def goalCenter(team: Team): Location = match team {
@@ -168,6 +169,15 @@ mod Bots {
         }
     }
 
+    def circleAndShootHardAt(goal: Location, pitch: Pitch, me: Player): Direction = {
+        let disp = Displacement.fromTo(pitch#ballLocation, me#location);
+        if (Displacement.distance(disp) < Constants.ballRadius() + Constants.playerRadius()) {
+            me#velocity |> Velocity.toDirection
+        } else {
+            circleAndShootAt(goal, pitch, me)
+        }
+    }
+
     pub def circleAndShoot(pitch: Pitch, me: Player): Direction = {
         let goal = goalCenter(Team.opp(me#team));
         circleAndShootAt(goal, pitch, me)
@@ -193,6 +203,11 @@ mod Bots {
         approachCircleAndShootAt(goal, pitch, me)
     }
 
+    pub def approachCircleAndShootHard(pitch: Pitch, me: Player): Direction = {
+        let goal = goalCenter(Team.opp(me#team));
+        approachCircleAndShootHardAt(goal, pitch, me)
+    }
+
     def approachCircleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         if (isBehindGoal(me#location) and not isBehindGoal(pitch#ballLocation)) {
             escapeBehindGoal(pitch, me)
@@ -200,6 +215,19 @@ mod Bots {
             let meToBall = Location.distance(me#location, pitch#ballLocation);
             if (meToBall <= 6.0) {
                 circleAndShootAt(goal, pitch, me)
+            } else {
+                approachCircle(goal, pitch, me)
+            }
+        }
+    }
+
+    def approachCircleAndShootHardAt(goal: Location, pitch: Pitch, me: Player): Direction = {
+        if (isBehindGoal(me#location) and not isBehindGoal(pitch#ballLocation)) {
+            escapeBehindGoal(pitch, me)
+        } else {
+            let meToBall = Location.distance(me#location, pitch#ballLocation);
+            if (meToBall <= 6.0) {
+                circleAndShootHardAt(goal, pitch, me)
             } else {
                 approachCircle(goal, pitch, me)
             }
@@ -340,8 +368,8 @@ mod Bots {
         loc#y < yMax and loc#y > yMin and (loc#x < xW or loc#x > xE)
     }
 
-    def escapeBehindGoal(_pitch: Pitch, me: Player): Direction = {
-        // go to the closest corner of the goal
+    def escapeBehindGoal(pitch: Pitch, me: Player): Direction = {
+        // go to the corner closest to the ball
         let nw = Displacement.apply(
             Displacement.inDirection(Direction.northwest(), Constants.playerRadius()),
             Locations.goalBackNW()
@@ -360,7 +388,7 @@ mod Bots {
         );
         
         let locs = Nel(nw, List#{ne, sw, se});
-        let cmp = Utils.mkCmp(loc -> Location.distance(me#location, loc));
+        let cmp = Utils.mkCmp(loc -> Location.distance(pitch#ballLocation, loc));
         let best = locs |> Nel.minimumBy(cmp);
 
         Direction.fromTo(me#location, best)

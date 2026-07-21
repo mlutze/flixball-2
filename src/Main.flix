@@ -198,7 +198,7 @@ def init(): MarshallBox \ IO = {
         mkPlayer(world, "West Striker", Team.West, Bots.mkBot(Bots.approachCircleAndShoot)),
         mkPlayer(world, "West Goalie", Team.West, Bots.mkBot(Bots.defend)),
 
-        mkPlayer(world, "East Striker", Team.East, Bots.mkBot(Bots.closeCircleAndShoot)),
+        mkPlayer(world, "East Striker", Team.East, Bots.mkBot(Bots.approachCircleAndShootHard)),
         mkPlayer(world, "East Goalie", Team.East, Bots.mkBot(Bots.defend))
     } |> List.map(p -> (p#name, p)) |> List.toMap;
 

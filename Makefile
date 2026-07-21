@@ -11,6 +11,9 @@ run: $(JARFILE)
 runH: $(JARFILE)
 	java -jar $(JARFILE) -H
 
+runH100: $(JARFILE)
+	for i in $$(seq 100); do java -jar $(JARFILE) -H; done
+
 check: $(FLIX_SOURCES) flix.toml
 	flix check
 

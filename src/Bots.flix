@@ -85,11 +85,7 @@ mod Bots {
     // go to the location where I'll be tangent to the ball,
     // and that tangent lines up with the goal
     def shootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
-        let ball = pitch#ballLocation;
-        let goalBallDir = Direction.fromTo(goal, ball);
-        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
-        let ballTargetDisplacement = Displacement.inDirection(goalBallDir, centerCenterDist);
-        let target = Displacement.apply(ballTargetDisplacement, ball);
+        let target = contactPoint(goal, pitch);
         Direction.fromTo(me#location, target)
     }
 
@@ -101,10 +97,7 @@ mod Bots {
     // like shoot, but ram the ball if we're close enough to lined up
     def shootHarderAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         let ball = pitch#ballLocation;
-        let goalBallDir = Direction.fromTo(goal, ball);
-        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
-        let ballTargetDisplacement = Displacement.inDirection(goalBallDir, centerCenterDist);
-        let target = Displacement.apply(ballTargetDisplacement, ball);
+        let target = contactPoint(goal, pitch);
         let dis = Displacement.fromTo(me#location, target);
         let dist = Displacement.distance(dis);
         if (dist > 0.1) {
@@ -264,7 +257,11 @@ mod Bots {
 
     // the location one must be to strike the ball such that it will enter the goal (ignoring momentum)
     def contactPoint(goal: Location, pitch: Pitch): Location = {
-        let ball = pitch#ballLocation;
+        contactPointFor(goal, pitch#ballLocation)
+    }
+
+    // the location one must be to strike `ball` such that it heads toward `goal` (ignoring momentum)
+    def contactPointFor(goal: Location, ball: Location): Location = {
         let goalToBall = Direction.fromTo(goal, ball);
         let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
         let ballTargetDisplacement = Displacement.inDirection(goalToBall, centerCenterDist);
@@ -333,10 +330,7 @@ mod Bots {
             Displacement.apply(disp, goalpostN)
         };
 
-        let goalBallDir = Direction.fromTo(goal, ball);
-        let centerCenterDist = Constants.playerRadius() + Constants.ballRadius();
-        let ballTargetDisplacement = Displacement.inDirection(goalBallDir, centerCenterDist);
-        let target = Displacement.apply(ballTargetDisplacement, ball);
+        let target = contactPointFor(goal, ball);
         Direction.fromTo(me#location, target)
     }
 

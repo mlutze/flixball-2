@@ -163,46 +163,58 @@ def main(): Unit \ IO = {
     }
 }
 
+enum UserData {
+    case Player(String)
+    case Ball
+}
+
+def setUserData(data: UserData, b: Body): Unit \ IO = {
+    b.setUserData(data)
+}
+
+def getUserData(b: Body): UserData \ IO = {
+    unchecked_cast(b.getUserData() as UserData)
+}
+
+def mkPlayer(world: World[Body], name: String, team: Team, bot: Bot): PhysicsPlayer \ IO = {
+    let body = mkPlayerBody();
+    body.setUserData(UserData.Player(name));
+    world.addBody(body);
+    {
+        name = name,
+        body = body,
+        state = Ref.fresh(Static, 0i8),
+        team = team,
+        bot = bot
+    }
+}
+
 def init(): MarshallBox \ IO = {
     let world = mkWorld();
-    let ball = mkBall();
-    world.addBody(ball);
+    let ball = mkBall(world);
     addGoalWalls(world);
 
-    let players = MutMap.empty(Static);
+    let players = List#{
+        mkPlayer(world, "West Striker", Team.West, Bots.mkBot(Bots.approachCircleAndShoot)),
+        mkPlayer(world, "West Goalie", Team.West, Bots.mkBot(Bots.defend)),
 
-    let bodySR = mkPlayer();
-    world.addBody(bodySR);
-    let playerSR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodySR, bot = Bots.mkBot(Bots.approachCircleAndShoot) };
-    players |> MutMap.put("West Striker", playerSR);
-
-    let bodyGR = mkPlayer();
-    world.addBody(bodyGR);
-    let playerGR = { state = Ref.fresh(Static, 0i8), team = Team.West, body = bodyGR, bot = Bots.mkBot(Bots.defend) };
-    players |> MutMap.put("West Goalie", playerGR);
-
-    let bodySB = mkPlayer();
-    world.addBody(bodySB);
-    let playerSB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodySB, bot = Bots.mkBot(Bots.closeCircleAndShoot) };
-    players |> MutMap.put("East Striker", playerSB);
-
-    let bodyGB = mkPlayer();
-    world.addBody(bodyGB);
-    let playerGB = { state = Ref.fresh(Static, 0i8), team = Team.East, body = bodyGB, bot = Bots.mkBot(Bots.defend) };
-    players |> MutMap.put("East Goalie", playerGB);
+        mkPlayer(world, "East Striker", Team.East, Bots.mkBot(Bots.closeCircleAndShoot)),
+        mkPlayer(world, "East Goalie", Team.East, Bots.mkBot(Bots.defend))
+    } |> List.map(p -> (p#name, p)) |> List.toMap;
 
     // TODO add a check that names are unique
 
     // All the refs here are placeholders
     let box = {
         world = world,
-        players = players |> MutMap.toMap,
+        players = players,
         ball = ball,
         timeMs = Ref.fresh(Static, 0),
         state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
         preGameJunk = MutList.empty(Static),
         westScore = Ref.fresh(Static, 0),
-        eastScore = Ref.fresh(Static, 0)
+        eastScore = Ref.fresh(Static, 0),
+        lastContact = Ref.fresh(Static, None)
     };
 
     resetGame(box);
@@ -496,7 +508,13 @@ def mkWorld(): World[Body] \ IO = {
     world.setGravity(World.ZERO_GRAVITY);
     world
 }
-def mkBall(): Body \ IO = {
+
+def mkBall(world: World[Body]): Body \ IO = {
+    let body = mkBallBody();
+    world.addBody(body);
+    body 
+}
+def mkBallBody(): Body \ IO = {
     let shape = Geometry.createCircle(ballRadius());
     let body = new Body();
     let fixture = body.addFixture(shape, ballDensity(), ballFriction(), ballRestitution());
@@ -508,7 +526,7 @@ def mkBall(): Body \ IO = {
     body
 }
 
-def mkPlayer(): Body \ IO = {
+def mkPlayerBody(): Body \ IO = {
     let shape = Geometry.createCircle(playerRadius());
     let body = new Body();
     let fixture = body.addFixture(shape, playerDensity(), playerFriction(), playerRestitution());

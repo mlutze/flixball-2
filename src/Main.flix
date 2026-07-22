@@ -59,7 +59,10 @@ def main(): Unit \ IO = {
         println("${westScore},${eastScore}")
     } else {
 
-        let marshallBox = init();
+        let box = init();
+        let frames = runGame2(box);
+        let currentFrame = Ref.fresh(Static, 0);
+
 
         let scorePanel = new JPanel();
         let timeLabel = new JLabel();
@@ -76,7 +79,7 @@ def main(): Unit \ IO = {
         scorePanel.add(timeLabel);
         scorePanel.add(eastScoreLabel);
 
-        let forcesRef = Ref.fresh(Static, false);
+        // let forcesRef = Ref.fresh(Static, false);
 
         let pitchPanel = new JPanel {
             def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
@@ -95,12 +98,13 @@ def main(): Unit \ IO = {
                 g2.scale(scale, -scale);
                 g2.setStroke(new BasicStroke(0.05f32));
 
-                let pitch = Marshall.makePitch(marshallBox);
-                let dirs = if (Ref.get(forcesRef)) {
-                    Some(getAiDirections(marshallBox))
-                } else {
-                    None
-                };
+                let pitch = frames[Ref.get(currentFrame)];
+                // let dirs = if (Ref.get(forcesRef)) {
+                //     Some(getAiDirections(marshallBox))
+                // } else {
+                //     None
+                // };
+                let dirs = None;
                 renderPitch(g2, pitch, dirs)
             }
         };
@@ -382,6 +386,20 @@ def runGame(box: MarshallBox): Unit \ IO = {
         }
     };
     loop()
+}
+
+def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {
+    let deltaTs  = 1.0 / 60.0;
+    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
+    let frames = MutList.empty(Static);
+    def loop() = {
+        frames |> MutList.push(Marshall.makePitch(box));
+        if (tick(box, deltaTs, deltaTms)) { 
+            loop()
+        }
+    };
+    loop();
+    frames |> MutList.toVector
 }
 
 def refreshDisplay(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel): Unit \ IO = {

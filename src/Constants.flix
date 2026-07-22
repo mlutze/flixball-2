@@ -82,4 +82,6 @@ mod Constants {
 
     pub def postGameMs(): Int32 = 30_000
 
+    pub def frameRate(): Int32 = 50
+
 }

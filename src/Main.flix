@@ -145,8 +145,7 @@ def main(): Unit \ IO = {
             // ignore if we're advancing it
             updatingSlider |> Guard.ifOpen(
                 () ->
-                    let value = slider.getValue();
-                    Ref.put(value, currentFrame);
+                    let value = syncFromSlider(currentFrame, slider);
                     let pitch = Vector.get(value, frames);
                     refreshDisplay(pitch, display)
             )
@@ -158,7 +157,11 @@ def main(): Unit \ IO = {
         def onClickBeginning(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () -> {
-                    Ref.put(0, currentFrame)
+                    let value = 0;
+                    Ref.put(value, currentFrame);
+                    discard syncToSlider(currentFrame, slider);
+                    let pitch = Vector.get(value, frames);
+                    refreshDisplay(pitch, display)
                 }
             )
         };
@@ -170,8 +173,11 @@ def main(): Unit \ IO = {
             updatingSlider |> Guard.withGuard(
                 () ->
                     let oldValue = Ref.get(currentFrame);
-                    let newValue = Int32.max(0, oldValue - 10 * 60);
-                    Ref.put(newValue, currentFrame)
+                    let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
+                    Ref.put(newValue, currentFrame);
+                    discard syncToSlider(currentFrame, slider);
+                    let pitch = Vector.get(newValue, frames);
+                    refreshDisplay(pitch, display)
             )
         };
 
@@ -194,8 +200,11 @@ def main(): Unit \ IO = {
             updatingSlider |> Guard.withGuard(
                 () ->
                     let oldValue = Ref.get(currentFrame);
-                    let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * 60);
-                    Ref.put(newValue, currentFrame)
+                    let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
+                    Ref.put(newValue, currentFrame);
+                    discard syncToSlider(currentFrame, slider);
+                    let pitch = Vector.get(newValue, frames);
+                    refreshDisplay(pitch, display)
             )
         };
 
@@ -203,7 +212,12 @@ def main(): Unit \ IO = {
 
         def onClickEnd(_): Unit = {
             updatingSlider |> Guard.withGuard(
-                () -> Ref.put(Vector.length(frames) - 1, currentFrame)
+                () ->
+                    let value = Vector.length(frames) - 1;
+                    Ref.put(value, currentFrame);
+                    discard syncToSlider(currentFrame, slider);
+                    let pitch = Vector.get(value, frames);
+                    refreshDisplay(pitch, display)
             )
         };
 
@@ -242,6 +256,18 @@ def main(): Unit \ IO = {
 enum UserData {
     case Player(String)
     case Ball
+}
+
+def syncToSlider(currentFrame: Ref[Int32, Static], slider: JSlider): Int32 \ IO = {
+    let value = Ref.get(currentFrame);
+    slider.setValue(value);
+    value
+}
+
+def syncFromSlider(currentFrame: Ref[Int32, Static], slider: JSlider): Int32 \ IO = {
+    let value = slider.getValue();
+    Ref.put(value, currentFrame);
+    value
 }
 
 def setUserData(data: UserData, b: Body): Unit \ IO = {
@@ -450,7 +476,7 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
 }
 
 def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {
-    let deltaTs  = 1.0 / 60.0;
+    let deltaTs  = 1.0 / Int32.toFloat64(Constants.frameRate());
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
     let frames = MutList.empty(Static);
     def loop() = {
@@ -487,7 +513,7 @@ def makeGameLoop(
     slider: JSlider,
     updatingSlider: Guard[Static]
 ): Timer \ IO = {
-    let deltaTs  = 1.0 / 60.0;
+    let deltaTs  = 1.0 / Int32.toFloat64(Constants.frameRate());
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def onTick(event: ActionEvent) = {

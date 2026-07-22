@@ -31,6 +31,7 @@ mod Marshall {
             ballVelocity = ballVelocity,
             westScore = Ref.get(box#westScore),
             eastScore = Ref.get(box#eastScore),
+            timeMs = Ref.get(box#timeMs),
             state = Ref.get(box#state)
         }
     }

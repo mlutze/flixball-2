@@ -79,7 +79,7 @@ def main(): Unit \ IO = {
         scorePanel.add(timeLabel);
         scorePanel.add(eastScoreLabel);
 
-        // let forcesRef = Ref.fresh(Static, false);
+        let forcesRef = Ref.fresh(Static, false);
 
         let pitchPanel = new JPanel {
             def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
@@ -98,7 +98,9 @@ def main(): Unit \ IO = {
                 g2.scale(scale, -scale);
                 g2.setStroke(new BasicStroke(0.05f32));
 
-                let pitch = frames[Ref.get(currentFrame)];
+                // clamp so the last frame keeps rendering after playback ends
+                let idx = Int32.min(Ref.get(currentFrame), Vector.length(frames) - 1);
+                let pitch = Vector.get(idx, frames);
                 // let dirs = if (Ref.get(forcesRef)) {
                 //     Some(getAiDirections(marshallBox))
                 // } else {
@@ -109,7 +111,7 @@ def main(): Unit \ IO = {
             }
         };
 
-        let gameLoop = makeGameLoop(marshallBox, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
+        let gameLoop = makeGameLoop(frames, currentFrame, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
 
         let buttonPanel = new JPanel();
         let startButton = new JButton("Start");
@@ -131,8 +133,13 @@ def main(): Unit \ IO = {
         startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
 
         def onClickReset(_): Unit = {
-            resetGame(marshallBox);
-            refreshDisplay(marshallBox, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel)
+            // playback: seek back to the first frame of the precomputed history
+            Ref.put(0, currentFrame);
+            match Vector.head(frames) {
+                case Some(pitch) =>
+                    refreshDisplay(pitch, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel)
+                case None => ()
+            }
         };
 
         resetButton.addActionListener(Utils.mkActionListener(onClickReset));
@@ -402,30 +409,33 @@ def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {
     frames |> MutList.toVector
 }
 
-def refreshDisplay(box: MarshallBox, pitchPanel: JPanel, timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel): Unit \ IO = {
+def refreshDisplay(
+    pitch: Pitch,
+    pitchPanel: JPanel, timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel
+): Unit \ IO = {
     pitchPanel.repaint();
-    timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
-    westScoreLabel.setText("${Ref.get(box#westScore)}");
-    eastScoreLabel.setText("${Ref.get(box#eastScore)}")
+    timeLabel.setText(formatTimeMs(pitch#timeMs));
+    westScoreLabel.setText("${pitch#westScore}");
+    eastScoreLabel.setText("${pitch#eastScore}")
 }
 
 def makeGameLoop(
-    box: MarshallBox, pitchPanel: JPanel,
+    frames: Vector[Pitch], currentFrame: Ref[Int32, Static], pitchPanel: JPanel,
     timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel
 ): Timer \ IO = {
     let deltaTs  = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def onTick(event: ActionEvent) = {
-        let continue = tick(box, deltaTs, deltaTms);
-        refreshDisplay(box, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
-        pitchPanel.repaint();
-        timeLabel.setText(formatTimeMs(Ref.get(box#timeMs)));
-        westScoreLabel.setText("${Ref.get(box#westScore)}");
-        eastScoreLabel.setText("${Ref.get(box#eastScore)}");
-        if (not continue) {
+        let i = Ref.get(currentFrame);
+        if (i >= Vector.length(frames)) {
+            // reached the end of the precomputed history: stop playback
             let timer = unchecked_cast(event.getSource() as Timer);
             timer.stop()
+        } else {
+            let pitch = Vector.get(i, frames);
+            refreshDisplay(pitch, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
+            Ref.put(i + 1, currentFrame)
         }
     };
 

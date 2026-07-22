@@ -4,5 +4,6 @@ type alias Pitch = {
     ballVelocity = Velocity,
     westScore = Int32,
     eastScore = Int32,
+    timeMs = Int32,
     state = GameState
 }

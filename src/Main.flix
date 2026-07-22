@@ -29,6 +29,7 @@ import javax.swing.JLabel
 import javax.swing.JCheckBox
 
 import java.lang.{Math => JMath}
+import java.lang.{String => JString}
 
 use Constants.pitchLength
 use Constants.pitchWidth
@@ -540,9 +541,8 @@ def makeGameLoop(
 }
 
 def formatTimeMs(ms: Int32): String = {
-    let whole = ms / 1000;
-    let tenth = ms / 100 - (whole * 10);
-    "${whole}.${tenth}"
+    let s = Int32.toFloat64(ms) / 1000.0;
+    unsafe IO { JString.format("%.1f", Float64.valueOf(s)) }
 }
 
 def executeAi(box: MarshallBox, forces: Map[String, Direction]): Unit \ IO = {

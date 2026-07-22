@@ -55,7 +55,7 @@ def main(): Unit \ IO = {
     let args = run Sys.Env.getArgs() with Sys.Env.runWithIO;
     if (args == List#{"-H"}) {
         let box = init();
-        runGame(box);
+        discard runGame2(box);
         let westScore = Ref.get(box#westScore);
         let eastScore = Ref.get(box#eastScore);
         println("${westScore},${eastScore}")
@@ -407,17 +407,6 @@ def tick(box: MarshallBox, deltaTs: Float64, deltaTms: Int32): Bool \ IO = {
     };
     box#world.step(1, deltaTs);
     continue
-}
-
-def runGame(box: MarshallBox): Unit \ IO = {
-    let deltaTs  = 1.0 / 60.0;
-    let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
-    def loop() = {
-        if (tick(box, deltaTs, deltaTms)) { 
-            loop()
-        }
-    };
-    loop()
 }
 
 def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {

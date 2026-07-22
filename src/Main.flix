@@ -125,7 +125,6 @@ def main(): Unit \ IO = {
         slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         let buttonPanel = new JPanel();
         let startButton = new JButton("Start");
-        let resetButton = new JButton("Reset");
         let forcesButton = new JButton("Show Forces");
 
         let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
@@ -146,28 +145,14 @@ def main(): Unit \ IO = {
         def onClickStartPause(_): Unit = {
             if (gameLoop.isRunning()) {
                 startButton.setText("Start");
-                gameLoop.stop();
-                resetButton.setEnabled(true)
+                gameLoop.stop()
             } else {
                 startButton.setText("Pause");
-                gameLoop.start();
-                resetButton.setEnabled(false)
+                gameLoop.start()
             }
         };
 
         startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
-
-        def onClickReset(_): Unit = {
-            // playback: seek back to the first frame of the precomputed history
-            Ref.put(0, currentFrame);
-            match Vector.head(frames) {
-                case Some(pitch) =>
-                    refreshDisplay(pitch, display)
-                case None => ()
-            }
-        };
-
-        resetButton.addActionListener(Utils.mkActionListener(onClickReset));
 
         def onClickForces(_): Unit = {
             let nowShowing = Ref.get(forcesRef);
@@ -185,7 +170,6 @@ def main(): Unit \ IO = {
         forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
 
         buttonPanel.add(startButton);
-        buttonPanel.add(resetButton);
         buttonPanel.add(forcesButton);
 
         lowerPanel.setLayout(new BorderLayout(0, 0));

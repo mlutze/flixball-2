@@ -16,6 +16,7 @@ import javax.swing.Timer
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JSlider
+import javax.swing.BorderFactory
 import javax.swing.JButton
 import org.dyn4j.dynamics.Body
 import org.dyn4j.dynamics.BodyFixture
@@ -116,6 +117,7 @@ def main(): Unit \ IO = {
 
         let lowerPanel = new JPanel();
         let slider = new JSlider(0, Vector.length(frames), 0);
+        slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         let buttonPanel = new JPanel();
         let startButton = new JButton("Start");
         let resetButton = new JButton("Reset");
@@ -173,13 +175,17 @@ def main(): Unit \ IO = {
         buttonPanel.add(resetButton);
         buttonPanel.add(forcesButton);
 
+        lowerPanel.setLayout(new BorderLayout(0, 0));
+        lowerPanel.add(slider, BorderLayout.NORTH);
+        lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
+
         let frame = new JFrame("Flixball 2");
         frame.setSize(1000, 600);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(pitchPanel, BorderLayout.CENTER);
         frame.add(scorePanel, BorderLayout.NORTH);
-        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.add(lowerPanel, BorderLayout.SOUTH);
         frame.setVisible(true)
     }
 }

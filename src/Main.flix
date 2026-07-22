@@ -113,7 +113,14 @@ def main(): Unit \ IO = {
             }
         };
 
-        let gameLoop = makeGameLoop(frames, currentFrame, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
+        let display = {
+            pitch = pitchPanel,
+            time = timeLabel,
+            westScore = westScoreLabel,
+            eastScore = eastScoreLabel
+        };
+
+        let gameLoop = makeGameLoop(frames, currentFrame, display);
 
         let lowerPanel = new JPanel();
         let slider = new JSlider(0, Vector.length(frames), 0);
@@ -122,6 +129,7 @@ def main(): Unit \ IO = {
         let startButton = new JButton("Start");
         let resetButton = new JButton("Reset");
         let forcesButton = new JButton("Show Forces");
+
 
         def onChangeSlider(_): Unit \ IO = {
             let value = slider.getValue();
@@ -149,7 +157,7 @@ def main(): Unit \ IO = {
             Ref.put(0, currentFrame);
             match Vector.head(frames) {
                 case Some(pitch) =>
-                    refreshDisplay(pitch, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel)
+                    refreshDisplay(pitch, display)
                 case None => ()
             }
         };
@@ -425,19 +433,27 @@ def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {
     frames |> MutList.toVector
 }
 
+type alias Display = {
+    pitch = JPanel,
+    time = JLabel,
+    westScore = JLabel,
+    eastScore = JLabel
+}
+
 def refreshDisplay(
     pitch: Pitch,
-    pitchPanel: JPanel, timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel
+    display: Display
 ): Unit \ IO = {
-    pitchPanel.repaint();
-    timeLabel.setText(formatTimeMs(pitch#timeMs));
-    westScoreLabel.setText("${pitch#westScore}");
-    eastScoreLabel.setText("${pitch#eastScore}")
+    display#pitch.repaint();
+    display#time.setText(formatTimeMs(pitch#timeMs));
+    display#westScore.setText("${pitch#westScore}");
+    display#eastScore.setText("${pitch#eastScore}")
 }
 
 def makeGameLoop(
-    frames: Vector[Pitch], currentFrame: Ref[Int32, Static], pitchPanel: JPanel,
-    timeLabel: JLabel, westScoreLabel: JLabel, eastScoreLabel: JLabel
+    frames: Vector[Pitch],
+    currentFrame: Ref[Int32, Static],
+    display: Display
 ): Timer \ IO = {
     let deltaTs  = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
@@ -450,7 +466,7 @@ def makeGameLoop(
             timer.stop()
         } else {
             let pitch = Vector.get(i, frames);
-            refreshDisplay(pitch, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
+            refreshDisplay(pitch, display);
             Ref.put(i + 1, currentFrame)
         }
     };

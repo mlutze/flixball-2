@@ -123,8 +123,13 @@ def main(): Unit \ IO = {
         let lowerPanel = new JPanel();
         let slider = new JSlider(0, Vector.length(frames), 0);
         slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
         let buttonPanel = new JPanel();
-        let startButton = new JButton("Start");
+        let beginningButton = new JButton("⏮");
+        let jumpBackwardButton = new JButton("⏪︎");
+        let startButton = new JButton("▶");
+        let jumpForwardButton = new JButton("⏩︎");
+        let endButton = new JButton("⏭");
         let forcesButton = new JButton("Show Forces");
 
         let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
@@ -150,6 +155,13 @@ def main(): Unit \ IO = {
                 startButton.setText("Pause");
                 gameLoop.start()
             }
+        };
+
+        def onClickBeginning(_): Unit = {
+            updatingSlider |> Guard.withGuard(
+                () ->
+                    ???
+            )
         };
 
         startButton.addActionListener(Utils.mkActionListener(onClickStartPause));

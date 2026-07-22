@@ -44,4 +44,8 @@ mod Utils {
     pub def mkCmp(f: a -> b \ ef): ((a, a) -> Comparison \ ef) with Order[b] = {
         (x, y) -> f(x) <=> f(y)
     }
+
+    pub def clampInt32(min: {min = Int32}, max: {max = Int32}, value: Int32): Int32 = {
+        value |> Int32.min(max#max) |> Int32.max(min#min)
+    }
 }

@@ -1,5 +1,7 @@
 mod Utils {
     import java.awt.event.ActionEvent
+    import javax.swing.event.ChangeEvent
+    import javax.swing.event.ChangeListener
     import java.awt.event.ActionListener
     import java.util.TimerTask
     import java.lang.Runnable
@@ -19,6 +21,12 @@ mod Utils {
     pub def mkActionListener(f: ActionEvent -> Unit \ ef): ActionListener \ IO = {
         new ActionListener {
             def actionPerformed(_this: ActionListener, e: ActionEvent): Unit \ ef = f(e)
+        }
+    }
+
+    pub def mkChangeListener(f: ChangeEvent -> Unit \ ef): ChangeListener \ IO = {
+        new ChangeListener {
+            def stateChanged(_this: ChangeListener, e: ChangeEvent): Unit \ ef = f(e)
         }
     }
 

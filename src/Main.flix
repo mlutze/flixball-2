@@ -15,6 +15,7 @@ import java.awt.event.ActionEvent
 import javax.swing.Timer
 import javax.swing.JFrame
 import javax.swing.JPanel
+import javax.swing.JSlider
 import javax.swing.JButton
 import org.dyn4j.dynamics.Body
 import org.dyn4j.dynamics.BodyFixture
@@ -113,10 +114,19 @@ def main(): Unit \ IO = {
 
         let gameLoop = makeGameLoop(frames, currentFrame, pitchPanel, timeLabel, westScoreLabel, eastScoreLabel);
 
+        let lowerPanel = new JPanel();
+        let slider = new JSlider(0, Vector.length(frames), 0);
         let buttonPanel = new JPanel();
         let startButton = new JButton("Start");
         let resetButton = new JButton("Reset");
         let forcesButton = new JButton("Show Forces");
+
+        def onChangeSlider(_): Unit \ IO = {
+            let value = slider.getValue();
+            Ref.put(value, currentFrame)
+        };
+
+        slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));
 
         def onClickStartPause(_): Unit = {
             if (gameLoop.isRunning()) {

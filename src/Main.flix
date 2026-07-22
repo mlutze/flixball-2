@@ -64,6 +64,7 @@ def main(): Unit \ IO = {
         let box = init();
         let frames = runGame2(box);
         let currentFrame = Ref.fresh(Static, 0);
+        let updatingSlider = Guard.fresh(Static);
 
 
         let scorePanel = new JPanel();
@@ -119,8 +120,6 @@ def main(): Unit \ IO = {
             eastScore = eastScoreLabel
         };
 
-        let gameLoop = makeGameLoop(frames, currentFrame, display);
-
         let lowerPanel = new JPanel();
         let slider = new JSlider(0, Vector.length(frames), 0);
         slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -129,12 +128,17 @@ def main(): Unit \ IO = {
         let resetButton = new JButton("Reset");
         let forcesButton = new JButton("Show Forces");
 
+        let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
 
         def onChangeSlider(_): Unit \ IO = {
-            let value = slider.getValue();
-            Ref.put(value, currentFrame);
-            let pitch = Vector.get(value, frames);
-            refreshDisplay(pitch, display)
+            // ignore if we're advancing it
+            updatingSlider |> Guard.ifOpen(
+                () ->
+                    let value = slider.getValue();
+                    Ref.put(value, currentFrame);
+                    let pitch = Vector.get(value, frames);
+                    refreshDisplay(pitch, display)
+            )
         };
 
         slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));
@@ -443,21 +447,30 @@ def refreshDisplay(
 def makeGameLoop(
     frames: Vector[Pitch],
     currentFrame: Ref[Int32, Static],
-    display: Display
+    display: Display,
+    slider: JSlider,
+    updatingSlider: Guard[Static]
 ): Timer \ IO = {
     let deltaTs  = 1.0 / 60.0;
     let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
 
     def onTick(event: ActionEvent) = {
-        let i = Ref.get(currentFrame);
-        if (i >= Vector.length(frames)) {
-            // reached the end of the precomputed history: stop playback
-            let timer = unchecked_cast(event.getSource() as Timer);
-            timer.stop()
-        } else {
-            let pitch = Vector.get(i, frames);
-            refreshDisplay(pitch, display);
-            Ref.put(i + 1, currentFrame)
+        // skip if the user is scrubbing
+        if (not slider.getValueIsAdjusting()) {
+            let i = Ref.get(currentFrame);
+            if (i >= Vector.length(frames)) {
+                // reached the end of the precomputed history: stop playback
+                let timer = unchecked_cast(event.getSource() as Timer);
+                timer.stop()
+            } else {
+                updatingSlider |> Guard.withGuard(
+                    () ->
+                        slider.setValue(i)
+                );
+                let pitch = Vector.get(i, frames);
+                refreshDisplay(pitch, display);
+                Ref.put(i + 1, currentFrame)
+            }
         }
     };
 

@@ -132,6 +132,13 @@ def main(): Unit \ IO = {
         let endButton = new JButton("⏭");
         let forcesButton = new JButton("Show Forces");
 
+        buttonPanel.add(beginningButton);
+        buttonPanel.add(jumpBackwardButton);
+        buttonPanel.add(startButton);
+        buttonPanel.add(jumpForwardButton);
+        buttonPanel.add(endButton);
+        buttonPanel.add(forcesButton);
+
         let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
 
         def onChangeSlider(_): Unit \ IO = {
@@ -147,24 +154,58 @@ def main(): Unit \ IO = {
 
         slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));
 
+
+        def onClickBeginning(_): Unit = {
+            updatingSlider |> Guard.withGuard(
+                () -> {
+                    Ref.put(0, currentFrame)
+                }
+            )
+        };
+
+        beginningButton.addActionListener(Utils.mkActionListener(onClickBeginning));
+
+
+        def onClickJumpBackward(_): Unit = {
+            updatingSlider |> Guard.withGuard(
+                () ->
+                    let oldValue = Ref.get(currentFrame);
+                    let newValue = Int32.max(0, oldValue - 10 * 60);
+                    Ref.put(newValue, currentFrame)
+            )
+        };
+
+        jumpBackwardButton.addActionListener(Utils.mkActionListener(onClickJumpBackward));
+
+
         def onClickStartPause(_): Unit = {
             if (gameLoop.isRunning()) {
-                startButton.setText("Start");
+                startButton.setText("▶");
                 gameLoop.stop()
             } else {
-                startButton.setText("Pause");
+                startButton.setText("⏸");
                 gameLoop.start()
             }
         };
 
-        def onClickBeginning(_): Unit = {
+        startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
+
+        def onClickJumpForward(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () ->
-                    ???
+                    let oldValue = Ref.get(currentFrame);
+                    let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * 60);
+                    Ref.put(newValue, currentFrame)
             )
         };
 
-        startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
+        jumpForwardButton.addActionListener(Utils.mkActionListener(onClickJumpForward));
+
+        def onClickEnd(_): Unit = {
+            updatingSlider |> Guard.withGuard(
+                () -> Ref.put(Vector.length(frames) - 1, currentFrame)
+            )
+        };
 
         def onClickForces(_): Unit = {
             let nowShowing = Ref.get(forcesRef);
@@ -179,10 +220,9 @@ def main(): Unit \ IO = {
             }
         };
 
-        forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
+        endButton.addActionListener(Utils.mkActionListener(onClickEnd));
 
-        buttonPanel.add(startButton);
-        buttonPanel.add(forcesButton);
+        forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
 
         lowerPanel.setLayout(new BorderLayout(0, 0));
         lowerPanel.add(slider, BorderLayout.NORTH);

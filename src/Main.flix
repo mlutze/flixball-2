@@ -100,8 +100,7 @@ def main(): Unit \ IO = {
                 g2.scale(scale, -scale);
                 g2.setStroke(new BasicStroke(0.05f32));
 
-                // clamp so the last frame keeps rendering after playback ends
-                let idx = Int32.min(Ref.get(currentFrame), Vector.length(frames) - 1);
+                let idx = Ref.get(currentFrame);
                 let pitch = Vector.get(idx, frames);
                 // let dirs = if (Ref.get(forcesRef)) {
                 //     Some(getAiDirections(marshallBox))
@@ -133,7 +132,9 @@ def main(): Unit \ IO = {
 
         def onChangeSlider(_): Unit \ IO = {
             let value = slider.getValue();
-            Ref.put(value, currentFrame)
+            Ref.put(value, currentFrame);
+            let pitch = Vector.get(value, frames);
+            refreshDisplay(pitch, display)
         };
 
         slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));

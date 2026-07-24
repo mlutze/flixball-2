@@ -41,9 +41,17 @@ mod Gui {
         // also set bot name -> 
 
         let westPanel = new JPanel();
-        let eastPanel = new JPanel();
+        // let eastPanel = new JPanel();
         let westAddPlayerButton = new JButton("Add Player");
-        ???
+        westPanel.add(mkBotLine());
+        westPanel.add(westAddPlayerButton);
+
+        let frame = new JFrame("Flixball 2");
+        frame.setSize(1000, 600);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(westPanel);
+        frame.setVisible(true)
     }
 
     pub def mkBotLine(): JPanel \ IO = {
@@ -51,7 +59,9 @@ mod Gui {
         let nameBox = new JTextField();
         let botNames = Map.keysOf(Bots.bots()) |> Set.toVector;
         let botBox = new JComboBox(botNames);
-        ???
+        panel.add(nameBox);
+        panel.add(botBox);
+        panel
     }
 
     pub def _runWithGui(): Unit \ IO = {

@@ -28,12 +28,33 @@ mod Gui {
     import java.awt.BorderLayout
     import javax.swing.JLabel
     import javax.swing.JCheckBox
+    import javax.swing.JTextField
+    import javax.swing.JComboBox
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
     import java.lang.System
 
     pub def runWithGui(): Unit \ IO = {
+        // split into two sides; east/west
+        // add bot button -> adds a line with a dropdown to select a bot by name
+        // also set bot name -> 
+
+        let westPanel = new JPanel();
+        let eastPanel = new JPanel();
+        let westAddPlayerButton = new JButton("Add Player");
+        ???
+    }
+
+    pub def mkBotLine(): JPanel \ IO = {
+        let panel = new JPanel();
+        let nameBox = new JTextField();
+        let botNames = Map.keysOf(Bots.bots()) |> Set.toVector;
+        let botBox = new JComboBox(botNames);
+        ???
+    }
+
+    pub def _runWithGui(): Unit \ IO = {
 
         let box = Simulation.init();
         let frames = Simulation.runGame(box);

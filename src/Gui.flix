@@ -31,13 +31,14 @@ mod Gui {
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
+    import java.lang.System
 
     pub def runWithGui(): Unit \ IO = {
 
         let box = Simulation.init();
         let frames = Simulation.runGame(box);
-        let currentFrame = Ref.fresh(Static, 0);
         let updatingSlider = Guard.fresh(Static);
+        let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute });
 
 
         let scorePanel = new JPanel();
@@ -74,7 +75,7 @@ mod Gui {
                 g2.scale(scale, -scale);
                 g2.setStroke(new BasicStroke(0.05f32));
 
-                let idx = Ref.get(currentFrame);
+                let idx = getCurrentFrame(Ref.get(anchor));
                 let pitch = Vector.get(idx, frames);
                 // let dirs = if (Ref.get(forcesRef)) {
                 //     Some(getAiDirections(marshallBox))
@@ -112,13 +113,13 @@ mod Gui {
         buttonPanel.add(endButton);
         buttonPanel.add(forcesButton);
 
-        let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
+        let gameLoop = makeGameLoop(frames, anchor, display, slider, updatingSlider);
 
         def onChangeSlider(_): Unit \ IO = {
             // ignore if we're advancing it
             updatingSlider |> Guard.ifOpen(
                 () ->
-                    let value = syncFromSlider(currentFrame, slider);
+                    let value = syncFromSlider(anchor, slider);
                     let pitch = Vector.get(value, frames);
                     refreshDisplay(pitch, display)
             )
@@ -131,8 +132,8 @@ mod Gui {
             updatingSlider |> Guard.withGuard(
                 () -> {
                     let value = 0;
-                    Ref.put(value, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
+                    setAnchor(value, anchor);
+                    discard syncToSlider(anchor, slider);
                     let pitch = Vector.get(value, frames);
                     refreshDisplay(pitch, display)
                 }
@@ -145,10 +146,10 @@ mod Gui {
         def onClickJumpBackward(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () ->
-                    let oldValue = Ref.get(currentFrame);
+                    let oldValue = getCurrentFrame(Ref.get(anchor));
                     let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
-                    Ref.put(newValue, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
+                    setAnchor(newValue, anchor);
+                    discard syncToSlider(anchor, slider);
                     let pitch = Vector.get(newValue, frames);
                     refreshDisplay(pitch, display)
             )
@@ -160,10 +161,12 @@ mod Gui {
         def onClickStartPause(_): Unit = {
             if (gameLoop.isRunning()) {
                 startButton.setText("▶");
-                gameLoop.stop()
+                gameLoop.stop();
+                pauseAnchor(anchor)
             } else {
                 startButton.setText("⏸");
-                gameLoop.start()
+                gameLoop.start();
+                unpauseAnchor(anchor)
             }
         };
 
@@ -172,10 +175,10 @@ mod Gui {
         def onClickJumpForward(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () ->
-                    let oldValue = Ref.get(currentFrame);
+                    let oldValue = getCurrentFrame(Ref.get(anchor));
                     let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
-                    Ref.put(newValue, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
+                    setAnchor(newValue, anchor);
+                    discard syncToSlider(anchor, slider);
                     let pitch = Vector.get(newValue, frames);
                     refreshDisplay(pitch, display)
             )
@@ -187,8 +190,8 @@ mod Gui {
             updatingSlider |> Guard.withGuard(
                 () ->
                     let value = Vector.length(frames) - 1;
-                    Ref.put(value, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
+                    setAnchor(value, anchor);
+                    discard syncToSlider(anchor, slider);
                     let pitch = Vector.get(value, frames);
                     refreshDisplay(pitch, display)
             )
@@ -226,15 +229,24 @@ mod Gui {
     }
 
 
-    def syncToSlider(currentFrame: Ref[Int32, Static], slider: JSlider): Int32 \ IO = {
-        let value = Ref.get(currentFrame);
+    def syncToSlider(anchor: Ref[Anchor, Static], slider: JSlider): Int32 \ IO = {
+        let value = getCurrentFrame(Ref.get(anchor));
         slider.setValue(value);
         value
     }
 
-    def syncFromSlider(currentFrame: Ref[Int32, Static], slider: JSlider): Int32 \ IO = {
+    def setAnchor(value: Int32, anchor: Ref[Anchor, Static]): Unit \ IO = {
+        let epoch = Epoch.Relative(System.currentTimeMillis());
+        Ref.put({ frame = value, epoch = epoch }, anchor)
+    }
+
+    def syncFromSlider(anchor: Ref[Anchor, Static], slider: JSlider): Int32 \ IO = {
         let value = slider.getValue();
-        Ref.put(value, currentFrame);
+        let epoch = match Ref.get(anchor)#epoch {
+            case Epoch.Absolute => Epoch.Absolute
+            case Epoch.Relative(_) => Epoch.Relative(System.currentTimeMillis())
+        };
+        Ref.put({ frame = value, epoch = epoch }, anchor);
         value
     }
 
@@ -255,9 +267,40 @@ mod Gui {
         display#eastScore.setText("${pitch#eastScore}")
     }
 
+    type alias Anchor = {
+        frame = Int32,
+        epoch = Epoch
+    }
+
+    enum Epoch {
+        case Absolute
+        case Relative(Int64)
+    }
+
+    def pauseAnchor(anchor: Ref[Anchor, Static]): Unit \ IO = {
+        let frame = getCurrentFrame(Ref.get(anchor));
+        Ref.put({ frame = frame, epoch = Epoch.Absolute }, anchor)
+    }
+
+    def unpauseAnchor(anchor: Ref[Anchor, Static]): Unit \ IO = {
+        let frame = getCurrentFrame(Ref.get(anchor));
+        let epoch = Epoch.Relative(System.currentTimeMillis());
+        Ref.put({ frame = frame, epoch = epoch }, anchor)
+    }
+
+    def getCurrentFrame(anchor: Anchor): Int32 \ IO = {
+        let now = System.currentTimeMillis();
+        let diff = match anchor#epoch {
+            case Epoch.Absolute => 0i64
+            case Epoch.Relative(time) => now - time
+        };
+        let framesPassed = Int64.truncateToInt32(Int32.toInt64(Constants.frameRate()) * diff / 1000i64);
+        anchor#frame + framesPassed
+    }
+
     def makeGameLoop(
         frames: Vector[Pitch],
-        currentFrame: Ref[Int32, Static],
+        anchor: Ref[Anchor, Static],
         display: Display,
         slider: JSlider,
         updatingSlider: Guard[Static]
@@ -268,7 +311,7 @@ mod Gui {
         def onTick(event: ActionEvent) = {
             // skip if the user is scrubbing
             if (not slider.getValueIsAdjusting()) {
-                let i = Ref.get(currentFrame);
+                let i = getCurrentFrame(Ref.get(anchor));
                 if (i >= Vector.length(frames)) {
                     // reached the end of the precomputed history: stop playback
                     let timer = unchecked_cast(event.getSource() as Timer);
@@ -279,8 +322,7 @@ mod Gui {
                             slider.setValue(i)
                     );
                     let pitch = Vector.get(i, frames);
-                    refreshDisplay(pitch, display);
-                    Ref.put(i + 1, currentFrame)
+                    refreshDisplay(pitch, display)
                 }
             }
         };

@@ -30,6 +30,7 @@ mod Gui {
     import javax.swing.JCheckBox
     import javax.swing.JTextField
     import javax.swing.JComboBox
+    import javax.swing.BoxLayout
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -40,11 +41,30 @@ mod Gui {
         // add bot button -> adds a line with a dropdown to select a bot by name
         // also set bot name -> 
 
+        let westBots = MutMap.empty(Static);
+
+
         let westPanel = new JPanel();
         // let eastPanel = new JPanel();
+        let westPlayersPanel = new JPanel();
+        westPlayersPanel.setLayout(new BoxLayout(westPlayersPanel, BoxLayout.Y_AXIS));
         let westAddPlayerButton = new JButton("Add Player");
-        westPanel.add(mkBotLine());
-        westPanel.add(westAddPlayerButton);
+        westPlayersPanel.add(westAddPlayerButton);
+        westPanel.add(westPlayersPanel);
+
+        let panelIndex = Ref.fresh(Static, 0);
+        
+
+        def onClickWestAddPlayer(_): Unit \ IO = {
+            run {
+                addBotLine(westBots, westPlayersPanel);
+                westPlayersPanel.revalidate();
+                westPlayersPanel.repaint()
+            } with GenSym.runWithRef(panelIndex)
+        };
+
+        westAddPlayerButton.addActionListener(Utils.mkActionListener(onClickWestAddPlayer));
+
 
         let frame = new JFrame("Flixball 2");
         frame.setSize(1000, 600);
@@ -54,14 +74,42 @@ mod Gui {
         frame.setVisible(true)
     }
 
-    pub def mkBotLine(): JPanel \ IO = {
+    type alias BotLine = {
+        nameField = JTextField,
+        botBox = JComboBox[String],
+        removeButton = JButton,
+        linePanel = JPanel,
+        id = Int32
+    }
+
+    pub def addBotLine(botList: MutMap[Int32, BotLine, Static], botPanel: JPanel): Unit \ IO + GenSym = {
+        let id = GenSym.next();
         let panel = new JPanel();
-        let nameBox = new JTextField();
+        let nameBox = new JTextField(10);
         let botNames = Map.keysOf(Bots.bots()) |> Set.toVector;
         let botBox = new JComboBox(botNames);
+        let removeButton = new JButton("Remove");
         panel.add(nameBox);
         panel.add(botBox);
-        panel
+        panel.add(removeButton);
+
+        def onClickRemove(_) = {
+            botList |> MutMap.remove(id);
+            botPanel.remove(panel);
+            botPanel.revalidate();
+            botPanel.repaint()
+        };
+
+        removeButton.addActionListener(Utils.mkActionListener(onClickRemove));
+        botList |> MutMap.put(id, {
+            id = id,
+            nameField = nameBox,
+            botBox = botBox,
+            removeButton = removeButton,
+            linePanel = panel 
+        });
+        let index = botPanel.getComponentCount() - 1;
+        discard botPanel.add(panel, index)
     }
 
     pub def _runWithGui(): Unit \ IO = {

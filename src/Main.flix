@@ -55,203 +55,211 @@ use Math.Random
 def main(): Unit \ IO = {
     let args = run Sys.Env.getArgs() with Sys.Env.runWithIO;
     if (args == List#{"-H"}) {
-        let box = init();
-        discard runGame2(box);
-        let westScore = Ref.get(box#westScore);
-        let eastScore = Ref.get(box#eastScore);
-        println("${westScore},${eastScore}")
+        runHeadless()
     } else {
-
-        let box = init();
-        let frames = runGame2(box);
-        let currentFrame = Ref.fresh(Static, 0);
-        let updatingSlider = Guard.fresh(Static);
-
-
-        let scorePanel = new JPanel();
-        let timeLabel = new JLabel();
-        timeLabel.setText("0.0");
-        
-        let westScoreLabel = new JLabel();
-        westScoreLabel.setForeground(Color.RED);
-        westScoreLabel.setText("0");
-        let eastScoreLabel = new JLabel();
-        eastScoreLabel.setForeground(Color.BLUE);
-        eastScoreLabel.setText("0");
-
-        scorePanel.add(westScoreLabel);
-        scorePanel.add(timeLabel);
-        scorePanel.add(eastScoreLabel);
-
-        let forcesRef = Ref.fresh(Static, false);
-
-        let pitchPanel = new JPanel {
-            def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
-                // super.paintComponent(g);
-                let g2 = unchecked_cast(g as Graphics2D);
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                let scale = Float64.min(
-                    Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
-                    Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
-                );
-                g2.translate(
-                    Int32.toFloat64(this.getWidth()) / 2.0,
-                    Int32.toFloat64(this.getHeight()) / 2.0
-                );
-                g2.scale(scale, -scale);
-                g2.setStroke(new BasicStroke(0.05f32));
-
-                let idx = Ref.get(currentFrame);
-                let pitch = Vector.get(idx, frames);
-                // let dirs = if (Ref.get(forcesRef)) {
-                //     Some(getAiDirections(marshallBox))
-                // } else {
-                //     None
-                // };
-                let dirs = None;
-                renderPitch(g2, pitch, dirs)
-            }
-        };
-
-        let display = {
-            pitch = pitchPanel,
-            time = timeLabel,
-            westScore = westScoreLabel,
-            eastScore = eastScoreLabel
-        };
-
-        let lowerPanel = new JPanel();
-        let slider = new JSlider(0, Vector.length(frames), 0);
-        slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-
-        let buttonPanel = new JPanel();
-        let beginningButton = new JButton("⏮");
-        let jumpBackwardButton = new JButton("⏪︎");
-        let startButton = new JButton("▶");
-        let jumpForwardButton = new JButton("⏩︎");
-        let endButton = new JButton("⏭");
-        let forcesButton = new JButton("Show Forces");
-
-        buttonPanel.add(beginningButton);
-        buttonPanel.add(jumpBackwardButton);
-        buttonPanel.add(startButton);
-        buttonPanel.add(jumpForwardButton);
-        buttonPanel.add(endButton);
-        buttonPanel.add(forcesButton);
-
-        let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
-
-        def onChangeSlider(_): Unit \ IO = {
-            // ignore if we're advancing it
-            updatingSlider |> Guard.ifOpen(
-                () ->
-                    let value = syncFromSlider(currentFrame, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
-            )
-        };
-
-        slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));
-
-
-        def onClickBeginning(_): Unit = {
-            updatingSlider |> Guard.withGuard(
-                () -> {
-                    let value = 0;
-                    Ref.put(value, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
-                }
-            )
-        };
-
-        beginningButton.addActionListener(Utils.mkActionListener(onClickBeginning));
-
-
-        def onClickJumpBackward(_): Unit = {
-            updatingSlider |> Guard.withGuard(
-                () ->
-                    let oldValue = Ref.get(currentFrame);
-                    let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
-                    Ref.put(newValue, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
-                    let pitch = Vector.get(newValue, frames);
-                    refreshDisplay(pitch, display)
-            )
-        };
-
-        jumpBackwardButton.addActionListener(Utils.mkActionListener(onClickJumpBackward));
-
-
-        def onClickStartPause(_): Unit = {
-            if (gameLoop.isRunning()) {
-                startButton.setText("▶");
-                gameLoop.stop()
-            } else {
-                startButton.setText("⏸");
-                gameLoop.start()
-            }
-        };
-
-        startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
-
-        def onClickJumpForward(_): Unit = {
-            updatingSlider |> Guard.withGuard(
-                () ->
-                    let oldValue = Ref.get(currentFrame);
-                    let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
-                    Ref.put(newValue, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
-                    let pitch = Vector.get(newValue, frames);
-                    refreshDisplay(pitch, display)
-            )
-        };
-
-        jumpForwardButton.addActionListener(Utils.mkActionListener(onClickJumpForward));
-
-        def onClickEnd(_): Unit = {
-            updatingSlider |> Guard.withGuard(
-                () ->
-                    let value = Vector.length(frames) - 1;
-                    Ref.put(value, currentFrame);
-                    discard syncToSlider(currentFrame, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
-            )
-        };
-
-        def onClickForces(_): Unit = {
-            let nowShowing = Ref.get(forcesRef);
-            if (nowShowing) {
-                Ref.put(false, forcesRef);
-                forcesButton.setText("Show Forces");
-                pitchPanel.repaint()
-            } else {
-                Ref.put(true, forcesRef);
-                forcesButton.setText("Hide Forces");
-                pitchPanel.repaint()
-            }
-        };
-
-        endButton.addActionListener(Utils.mkActionListener(onClickEnd));
-
-        forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
-
-        lowerPanel.setLayout(new BorderLayout(0, 0));
-        lowerPanel.add(slider, BorderLayout.NORTH);
-        lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        let frame = new JFrame("Flixball 2");
-        frame.setSize(1000, 600);
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(pitchPanel, BorderLayout.CENTER);
-        frame.add(scorePanel, BorderLayout.NORTH);
-        frame.add(lowerPanel, BorderLayout.SOUTH);
-        frame.setVisible(true)
+        runWithGui()
     }
+}
+
+def runHeadless(): Unit \ IO = {
+    let box = init();
+    discard runGame2(box);
+    let westScore = Ref.get(box#westScore);
+    let eastScore = Ref.get(box#eastScore);
+    println("${westScore},${eastScore}")
+}
+
+def runWithGui(): Unit \ IO = {
+
+    let box = init();
+    let frames = runGame2(box);
+    let currentFrame = Ref.fresh(Static, 0);
+    let updatingSlider = Guard.fresh(Static);
+
+
+    let scorePanel = new JPanel();
+    let timeLabel = new JLabel();
+    timeLabel.setText("0.0");
+    
+    let westScoreLabel = new JLabel();
+    westScoreLabel.setForeground(Color.RED);
+    westScoreLabel.setText("0");
+    let eastScoreLabel = new JLabel();
+    eastScoreLabel.setForeground(Color.BLUE);
+    eastScoreLabel.setText("0");
+
+    scorePanel.add(westScoreLabel);
+    scorePanel.add(timeLabel);
+    scorePanel.add(eastScoreLabel);
+
+    let forcesRef = Ref.fresh(Static, false);
+
+    let pitchPanel = new JPanel {
+        def paintComponent(this: JPanel, g: Graphics): Unit \ IO = {
+            // super.paintComponent(g);
+            let g2 = unchecked_cast(g as Graphics2D);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            let scale = Float64.min(
+                Int32.toFloat64(this.getWidth()) / (pitchLength() + 10.0),
+                Int32.toFloat64(this.getHeight()) / (pitchWidth() + 10.0)
+            );
+            g2.translate(
+                Int32.toFloat64(this.getWidth()) / 2.0,
+                Int32.toFloat64(this.getHeight()) / 2.0
+            );
+            g2.scale(scale, -scale);
+            g2.setStroke(new BasicStroke(0.05f32));
+
+            let idx = Ref.get(currentFrame);
+            let pitch = Vector.get(idx, frames);
+            // let dirs = if (Ref.get(forcesRef)) {
+            //     Some(getAiDirections(marshallBox))
+            // } else {
+            //     None
+            // };
+            let dirs = None;
+            renderPitch(g2, pitch, dirs)
+        }
+    };
+
+    let display = {
+        pitch = pitchPanel,
+        time = timeLabel,
+        westScore = westScoreLabel,
+        eastScore = eastScoreLabel
+    };
+
+    let lowerPanel = new JPanel();
+    let slider = new JSlider(0, Vector.length(frames), 0);
+    slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+    let buttonPanel = new JPanel();
+    let beginningButton = new JButton("⏮");
+    let jumpBackwardButton = new JButton("⏪︎");
+    let startButton = new JButton("▶");
+    let jumpForwardButton = new JButton("⏩︎");
+    let endButton = new JButton("⏭");
+    let forcesButton = new JButton("Show Forces");
+
+    buttonPanel.add(beginningButton);
+    buttonPanel.add(jumpBackwardButton);
+    buttonPanel.add(startButton);
+    buttonPanel.add(jumpForwardButton);
+    buttonPanel.add(endButton);
+    buttonPanel.add(forcesButton);
+
+    let gameLoop = makeGameLoop(frames, currentFrame, display, slider, updatingSlider);
+
+    def onChangeSlider(_): Unit \ IO = {
+        // ignore if we're advancing it
+        updatingSlider |> Guard.ifOpen(
+            () ->
+                let value = syncFromSlider(currentFrame, slider);
+                let pitch = Vector.get(value, frames);
+                refreshDisplay(pitch, display)
+        )
+    };
+
+    slider.addChangeListener(Utils.mkChangeListener(onChangeSlider));
+
+
+    def onClickBeginning(_): Unit = {
+        updatingSlider |> Guard.withGuard(
+            () -> {
+                let value = 0;
+                Ref.put(value, currentFrame);
+                discard syncToSlider(currentFrame, slider);
+                let pitch = Vector.get(value, frames);
+                refreshDisplay(pitch, display)
+            }
+        )
+    };
+
+    beginningButton.addActionListener(Utils.mkActionListener(onClickBeginning));
+
+
+    def onClickJumpBackward(_): Unit = {
+        updatingSlider |> Guard.withGuard(
+            () ->
+                let oldValue = Ref.get(currentFrame);
+                let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
+                Ref.put(newValue, currentFrame);
+                discard syncToSlider(currentFrame, slider);
+                let pitch = Vector.get(newValue, frames);
+                refreshDisplay(pitch, display)
+        )
+    };
+
+    jumpBackwardButton.addActionListener(Utils.mkActionListener(onClickJumpBackward));
+
+
+    def onClickStartPause(_): Unit = {
+        if (gameLoop.isRunning()) {
+            startButton.setText("▶");
+            gameLoop.stop()
+        } else {
+            startButton.setText("⏸");
+            gameLoop.start()
+        }
+    };
+
+    startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
+
+    def onClickJumpForward(_): Unit = {
+        updatingSlider |> Guard.withGuard(
+            () ->
+                let oldValue = Ref.get(currentFrame);
+                let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
+                Ref.put(newValue, currentFrame);
+                discard syncToSlider(currentFrame, slider);
+                let pitch = Vector.get(newValue, frames);
+                refreshDisplay(pitch, display)
+        )
+    };
+
+    jumpForwardButton.addActionListener(Utils.mkActionListener(onClickJumpForward));
+
+    def onClickEnd(_): Unit = {
+        updatingSlider |> Guard.withGuard(
+            () ->
+                let value = Vector.length(frames) - 1;
+                Ref.put(value, currentFrame);
+                discard syncToSlider(currentFrame, slider);
+                let pitch = Vector.get(value, frames);
+                refreshDisplay(pitch, display)
+        )
+    };
+
+    def onClickForces(_): Unit = {
+        let nowShowing = Ref.get(forcesRef);
+        if (nowShowing) {
+            Ref.put(false, forcesRef);
+            forcesButton.setText("Show Forces");
+            pitchPanel.repaint()
+        } else {
+            Ref.put(true, forcesRef);
+            forcesButton.setText("Hide Forces");
+            pitchPanel.repaint()
+        }
+    };
+
+    endButton.addActionListener(Utils.mkActionListener(onClickEnd));
+
+    forcesButton.addActionListener(Utils.mkActionListener(onClickForces));
+
+    lowerPanel.setLayout(new BorderLayout(0, 0));
+    lowerPanel.add(slider, BorderLayout.NORTH);
+    lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+    let frame = new JFrame("Flixball 2");
+    frame.setSize(1000, 600);
+    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.add(pitchPanel, BorderLayout.CENTER);
+    frame.add(scorePanel, BorderLayout.NORTH);
+    frame.add(lowerPanel, BorderLayout.SOUTH);
+    frame.setVisible(true)
 }
 
 enum UserData {

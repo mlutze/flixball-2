@@ -54,7 +54,7 @@ mod Simulation {
     use Math.Random
     pub def runHeadless(): Unit \ IO = {
         let box = init();
-        discard runGame2(box);
+        discard runGame(box);
         let westScore = Ref.get(box#westScore);
         let eastScore = Ref.get(box#eastScore);
         println("${westScore},${eastScore}")
@@ -271,7 +271,7 @@ mod Simulation {
         continue
     }
 
-    pub def runGame2(box: MarshallBox): Vector[Pitch] \ IO = {
+    pub def runGame(box: MarshallBox): Vector[Pitch] \ IO = {
         let deltaTs  = 1.0 / Int32.toFloat64(Constants.frameRate());
         let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
         let frames = MutList.empty(Static);

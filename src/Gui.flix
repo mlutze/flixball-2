@@ -35,7 +35,7 @@ mod Gui {
     pub def runWithGui(): Unit \ IO = {
 
         let box = Simulation.init();
-        let frames = Simulation.runGame2(box);
+        let frames = Simulation.runGame(box);
         let currentFrame = Ref.fresh(Static, 0);
         let updatingSlider = Guard.fresh(Static);
 

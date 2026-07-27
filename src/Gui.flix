@@ -64,6 +64,29 @@ mod Gui {
         frame.setVisible(true)
     }
 
+    def _validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {
+        let allBots = MutMap.toMap(eastBots) `Map.union` MutMap.toMap(westBots);
+        let names = allBots |> Map.valuesOf |> List.map(line -> line#nameField.getText());
+        let duplicates = names
+            |> List.frequency
+            |> Map.toList
+            |> List.filter(match (_name, count) -> count > 1)
+            |> List.map(match (name, _count) -> name)
+            |> List.toSet;
+        
+        foreach (
+            (_id, bot) <- allBots
+        ) {
+            let name = bot#nameField.getText();
+            if (Set.memberOf(name, duplicates)) {
+                // TODO mark it
+                ()
+            }
+        };
+
+        Set.isEmpty(duplicates)
+    }
+
     def makePlayersPanel(panelIndex: Ref[Int32, Static], bots: MutMap[Int32, BotLine, Static]): JPanel \ IO = {
         let panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));

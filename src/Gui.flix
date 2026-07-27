@@ -31,6 +31,7 @@ mod Gui {
     import javax.swing.JTextField
     import javax.swing.JComboBox
     import javax.swing.BoxLayout
+    import java.awt.GridLayout
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -41,37 +42,44 @@ mod Gui {
         // add bot button -> adds a line with a dropdown to select a bot by name
         // also set bot name -> 
 
+        let panelIndex = Ref.fresh(Static, 0);
         let westBots = MutMap.empty(Static);
-
+        let eastBots = MutMap.empty(Static);
 
         let westPanel = new JPanel();
-        // let eastPanel = new JPanel();
-        let westPlayersPanel = new JPanel();
-        westPlayersPanel.setLayout(new BoxLayout(westPlayersPanel, BoxLayout.Y_AXIS));
-        let westAddPlayerButton = new JButton("Add Player");
-        westPlayersPanel.add(westAddPlayerButton);
+        let westPlayersPanel = makePlayersPanel(panelIndex, westBots);
         westPanel.add(westPlayersPanel);
 
-        let panelIndex = Ref.fresh(Static, 0);
-        
-
-        def onClickWestAddPlayer(_): Unit \ IO = {
-            run {
-                addBotLine(westBots, westPlayersPanel);
-                westPlayersPanel.revalidate();
-                westPlayersPanel.repaint()
-            } with GenSym.runWithRef(panelIndex)
-        };
-
-        westAddPlayerButton.addActionListener(Utils.mkActionListener(onClickWestAddPlayer));
-
+        let eastPanel = new JPanel();
+        let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots);
+        eastPanel.add(eastPlayersPanel);
 
         let frame = new JFrame("Flixball 2");
         frame.setSize(1000, 600);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new GridLayout(1, 2));
         frame.add(westPanel);
+        frame.add(eastPanel);
         frame.setVisible(true)
+    }
+
+    def makePlayersPanel(panelIndex: Ref[Int32, Static], bots: MutMap[Int32, BotLine, Static]): JPanel \ IO = {
+        let panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        let addPlayerButton = new JButton("Add Player");
+        panel.add(addPlayerButton);
+
+        def onClickAddPlayer(_): Unit \ IO = {
+            run {
+                addBotLine(bots, panel);
+                panel.revalidate();
+                panel.repaint()
+            } with GenSym.runWithRef(panelIndex)
+        };
+        addPlayerButton.addActionListener(Utils.mkActionListener(onClickAddPlayer));
+
+        panel
     }
 
     type alias BotLine = {

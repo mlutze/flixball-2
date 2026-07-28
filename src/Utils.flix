@@ -1,10 +1,12 @@
 mod Utils {
     import java.awt.event.ActionEvent
+    import java.awt.event.ActionListener
+    import java.lang.Runnable
+    import java.util.TimerTask
     import javax.swing.event.ChangeEvent
     import javax.swing.event.ChangeListener
-    import java.awt.event.ActionListener
-    import java.util.TimerTask
-    import java.lang.Runnable
+    import javax.swing.event.DocumentEvent
+    import javax.swing.event.DocumentListener
 
     pub def mkRunnable(f: Unit -> Unit \ ef): Runnable \ IO = {
         new Runnable {
@@ -27,6 +29,14 @@ mod Utils {
     pub def mkChangeListener(f: ChangeEvent -> Unit \ ef): ChangeListener \ IO = {
         new ChangeListener {
             def stateChanged(_this: ChangeListener, e: ChangeEvent): Unit \ ef = f(e)
+        }
+    }
+
+    pub def mkDocumentListener(f: DocumentEvent -> Unit \ ef): DocumentListener \ IO = {
+        new DocumentListener {
+            def changedUpdate(_this: DocumentListener, e: DocumentEvent): Unit \ ef = f(e)
+            def insertUpdate(_this: DocumentListener, e: DocumentEvent): Unit \ ef = f(e)
+            def removeUpdate(_this: DocumentListener, e: DocumentEvent): Unit \ ef = f(e)
         }
     }
 

@@ -47,11 +47,11 @@ mod Gui {
         let eastBots = MutMap.empty(Static);
 
         let westPanel = new JPanel();
-        let westPlayersPanel = makePlayersPanel(panelIndex, westBots);
+        let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
         westPanel.add(westPlayersPanel);
 
         let eastPanel = new JPanel();
-        let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots);
+        let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
         eastPanel.add(eastPlayersPanel);
 
         let frame = new JFrame("Flixball 2");
@@ -64,7 +64,7 @@ mod Gui {
         frame.setVisible(true)
     }
 
-    def _validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {
+    def validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {
         let allBots = MutMap.toMap(eastBots) `Map.union` MutMap.toMap(westBots);
         let names = allBots |> Map.valuesOf |> List.map(line -> line#nameField.getText());
         let duplicates = names
@@ -79,15 +79,16 @@ mod Gui {
         ) {
             let name = bot#nameField.getText();
             if (Set.memberOf(name, duplicates)) {
-                // TODO mark it
-                ()
+                bot#nameField.setBackground(Color.RED)
+            } else {
+                bot#nameField.setBackground(Color.WHITE)
             }
         };
 
         Set.isEmpty(duplicates)
     }
 
-    def makePlayersPanel(panelIndex: Ref[Int32, Static], bots: MutMap[Int32, BotLine, Static]): JPanel \ IO = {
+    def makePlayersPanel(panelIndex: Ref[Int32, Static], bots: MutMap[Int32, BotLine, Static], otherBots: MutMap[Int32, BotLine, Static]): JPanel \ IO = {
         let panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         let addPlayerButton = new JButton("Add Player");
@@ -95,7 +96,7 @@ mod Gui {
 
         def onClickAddPlayer(_): Unit \ IO = {
             run {
-                addBotLine(bots, panel);
+                addBotLine(bots, panel, otherBots);
                 panel.revalidate();
                 panel.repaint()
             } with GenSym.runWithRef(panelIndex)
@@ -113,7 +114,7 @@ mod Gui {
         id = Int32
     }
 
-    pub def addBotLine(botList: MutMap[Int32, BotLine, Static], botPanel: JPanel): Unit \ IO + GenSym = {
+    pub def addBotLine(botList: MutMap[Int32, BotLine, Static], botPanel: JPanel, otherBots: MutMap[Int32, BotLine, Static]): Unit \ IO + GenSym = {
         let id = GenSym.next();
         let panel = new JPanel();
         let nameBox = new JTextField(10);
@@ -130,8 +131,13 @@ mod Gui {
             botPanel.revalidate();
             botPanel.repaint()
         };
-
         removeButton.addActionListener(Utils.mkActionListener(onClickRemove));
+
+        def onChangeName(_) = {
+            discard validate(botList, otherBots) // TODO use result
+        };
+        nameBox.getDocument().addDocumentListener(Utils.mkDocumentListener(onChangeName));
+
         botList |> MutMap.put(id, {
             id = id,
             nameField = nameBox,

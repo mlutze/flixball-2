@@ -54,13 +54,23 @@ mod Gui {
         let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
         eastPanel.add(eastPlayersPanel);
 
+        let teamsPanel = new JPanel();
+        teamsPanel.setLayout(new GridLayout(1, 2));
+        teamsPanel.add(westPanel);
+        teamsPanel.add(eastPanel);
+
+        let goButton = new JButton("Go");
+        def onClickGo(_) = {
+            let _config = mkGameConfig(westBots, eastBots);
+            () // now transition to the main stage!
+        };
+        goButton.addActionListener(Utils.mkActionListener(onClickGo));
+
         let frame = new JFrame("Flixball 2");
         frame.setSize(1000, 600);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new GridLayout(1, 2));
-        frame.add(westPanel);
-        frame.add(eastPanel);
+        frame.add(teamsPanel);
         frame.setVisible(true)
     }
 
@@ -115,9 +125,11 @@ mod Gui {
     }
 
     pub def addBotLine(botList: MutMap[Int32, BotLine, Static], botPanel: JPanel, otherBots: MutMap[Int32, BotLine, Static]): Unit \ IO + GenSym = {
+        let numBots = MutMap.size(botList) + MutMap.size(otherBots);
+        let botName = "Player ${numBots + 1}";
         let id = GenSym.next();
         let panel = new JPanel();
-        let nameBox = new JTextField(10);
+        let nameBox = new JTextField(botName, 10);
         let botNames = Map.keysOf(Bots.bots()) |> Set.toVector;
         let botBox = new JComboBox(botNames);
         let removeButton = new JButton("Remove");
@@ -147,6 +159,27 @@ mod Gui {
         });
         let index = botPanel.getComponentCount() - 1;
         discard botPanel.add(panel, index)
+    }
+
+    def mkGameConfig(westPlayers: MutMap[Int32, BotLine, Static], eastPlayers: MutMap[Int32, BotLine, Static]): GameConfig \ IO = {
+        westPlayers = westPlayers |> MutMap.valuesOf |> List.map(mkPlayer) |> List.toMap,
+        eastPlayers = eastPlayers |> MutMap.valuesOf |> List.map(mkPlayer) |> List.toMap
+    }
+
+    def mkPlayer(line: BotLine): (String, Bot) \ IO = {
+        let name = line#nameField.getText();
+        let botName = line#botBox |> getSelectedItem;
+        let bot = Bots.bots() |> Utils.unsafeGetMap(botName);
+        (name, bot) 
+    }
+
+    def getSelectedItem(box: JComboBox[a]): a \ IO = {
+        unchecked_cast(box.getSelectedItem() as a)
+    }
+
+    type alias GameConfig = {
+        westPlayers = Map[String, Bot],
+        eastPlayers = Map[String, Bot]
     }
 
     pub def _runWithGui(): Unit \ IO = {

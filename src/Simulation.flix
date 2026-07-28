@@ -60,6 +60,49 @@ mod Simulation {
         println("${westScore},${eastScore}")
     }
 
+    def defaultConfig(): Gui.GameConfig = {
+        westPlayers = Map#{
+            "West Striker" => Bots.mkBot(Bots.approachCircleAndShoot),
+            "West Goalie" => Bots.mkBot(Bots.defend)
+        },
+
+        eastPlayers = Map#{
+            "East Striker" => Bots.mkBot(Bots.approachCircleAndShootHard),
+            "East Goalie" => Bots.mkBot(Bots.defend)
+        }
+    }
+
+    pub def initWithConfig(config: Gui.GameConfig): MarshallBox \ IO = {
+        let world = mkWorld();
+        let ball = mkBall(world);
+        addGoalWalls(world);
+
+        let westPlayers = config#westPlayers
+            |> Map.mapWithKey((name, bot) -> mkPlayer(world, name, Team.West, bot));
+        let eastPlayers = config#eastPlayers
+            |> Map.mapWithKey((name, bot) -> mkPlayer(world, name, Team.East, bot));
+
+        let players = westPlayers `Map.union` eastPlayers;
+
+        // TODO add a check that names are unique
+
+        // All the refs here are placeholders
+        let box = {
+            world = world,
+            players = players,
+            ball = ball,
+            timeMs = Ref.fresh(Static, 0),
+            state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
+            preGameJunk = MutList.empty(Static),
+            westScore = Ref.fresh(Static, 0),
+            eastScore = Ref.fresh(Static, 0),
+            lastContact = Ref.fresh(Static, None)
+        };
+
+        resetGame(box);
+        box
+    }
+
 
     enum UserData {
         case Player(String)
@@ -88,35 +131,7 @@ mod Simulation {
     }
 
     pub def init(): MarshallBox \ IO = {
-        let world = mkWorld();
-        let ball = mkBall(world);
-        addGoalWalls(world);
-
-        let players = List#{
-            mkPlayer(world, "West Striker", Team.West, Bots.mkBot(Bots.approachCircleAndShoot)),
-            mkPlayer(world, "West Goalie", Team.West, Bots.mkBot(Bots.defend)),
-
-            mkPlayer(world, "East Striker", Team.East, Bots.mkBot(Bots.approachCircleAndShootHard)),
-            mkPlayer(world, "East Goalie", Team.East, Bots.mkBot(Bots.defend))
-        } |> List.map(p -> (p#name, p)) |> List.toMap;
-
-        // TODO add a check that names are unique
-
-        // All the refs here are placeholders
-        let box = {
-            world = world,
-            players = players,
-            ball = ball,
-            timeMs = Ref.fresh(Static, 0),
-            state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
-            preGameJunk = MutList.empty(Static),
-            westScore = Ref.fresh(Static, 0),
-            eastScore = Ref.fresh(Static, 0),
-            lastContact = Ref.fresh(Static, None)
-        };
-
-        resetGame(box);
-        box
+        initWithConfig(defaultConfig())
     }
 
     def resetGame(box: MarshallBox): Unit \ IO = {

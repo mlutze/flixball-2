@@ -37,7 +37,27 @@ mod Gui {
     import java.lang.{String => JString}
     import java.lang.System
 
+    pub type alias GameConfig = {
+        westPlayers = Map[String, Bot],
+        eastPlayers = Map[String, Bot]
+    }
+
     pub def runWithGui(): Unit \ IO = {
+        let cardPanel = new JPanel();
+
+        let setupPage = mkSetupPage();
+
+        cardPanel.add(setupPage);
+
+        let frame = new JFrame("Flixball 2");
+        frame.setSize(1000, 600);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(cardPanel);
+        frame.setVisible(true)
+    }
+
+    def mkSetupPage(): JPanel \ IO = {
         // split into two sides; east/west
         // add bot button -> adds a line with a dropdown to select a bot by name
         // also set bot name -> 
@@ -62,16 +82,16 @@ mod Gui {
         let goButton = new JButton("Go");
         def onClickGo(_) = {
             let _config = mkGameConfig(westBots, eastBots);
+            // simulate the game
+            // transition to the main stage
             () // now transition to the main stage!
         };
         goButton.addActionListener(Utils.mkActionListener(onClickGo));
 
-        let frame = new JFrame("Flixball 2");
-        frame.setSize(1000, 600);
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(teamsPanel);
-        frame.setVisible(true)
+        let mainPanel = new JPanel();
+        mainPanel.add(teamsPanel);
+        mainPanel.add(goButton);
+        mainPanel
     }
 
     def validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {
@@ -175,6 +195,10 @@ mod Gui {
 
     def getSelectedItem(box: JComboBox[a]): a \ IO = {
         unchecked_cast(box.getSelectedItem() as a)
+    }
+
+    pub def mkSimulationPage(): JPanel \ IO = {
+        ???
     }
 
     pub def _runWithGui(): Unit \ IO = {

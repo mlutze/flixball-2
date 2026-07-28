@@ -177,11 +177,6 @@ mod Gui {
         unchecked_cast(box.getSelectedItem() as a)
     }
 
-    type alias GameConfig = {
-        westPlayers = Map[String, Bot],
-        eastPlayers = Map[String, Bot]
-    }
-
     pub def _runWithGui(): Unit \ IO = {
 
         let box = Simulation.init();

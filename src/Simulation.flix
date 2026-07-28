@@ -60,6 +60,11 @@ mod Simulation {
         println("${westScore},${eastScore}")
     }
 
+    pub def simulate(config: Gui.GameConfig): Vector[Pitch] \ IO = {
+        let box = initWithConfig(config);
+        runGame(box)
+    }
+
     def defaultConfig(): Gui.GameConfig = {
         westPlayers = Map#{
             "West Striker" => Bots.mkBot(Bots.approachCircleAndShoot),

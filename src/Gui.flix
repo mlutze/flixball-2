@@ -79,7 +79,7 @@ mod Gui {
         ) {
             let name = bot#nameField.getText();
             if (Set.memberOf(name, duplicates)) {
-                bot#nameField.setBackground(Color.RED)
+                bot#nameField.setBackground(Color.PINK)
             } else {
                 bot#nameField.setBackground(Color.WHITE)
             }

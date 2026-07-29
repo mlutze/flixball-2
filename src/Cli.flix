@@ -29,6 +29,7 @@ mod Cli {
             let newGameConfig = { westPlayers = newWestPlayers | config#gameConfig };
             let newConfig = { gameConfig = newGameConfig | config };
             parseHelper(tl, newConfig)
+        case opt => Abort.abort(RichString.fromString("Unrecognized option: ${opt}"))
     }
 
     def parseAssignment(assignment: String, usedNames: Set[String]): (String, Bot) \ Abort = {

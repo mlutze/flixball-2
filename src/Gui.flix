@@ -38,11 +38,6 @@ mod Gui {
     import java.lang.{String => JString}
     import java.lang.System
 
-    pub type alias GameConfig = {
-        westPlayers = Map[String, Bot],
-        eastPlayers = Map[String, Bot]
-    }
-
     pub def runWithGui(): Unit \ IO = {
         let cardPanel = new JPanel();
         cardPanel.setLayout(new CardLayout());

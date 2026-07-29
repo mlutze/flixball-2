@@ -2,7 +2,7 @@ mod Cli {
 
     type alias CliConfig = {
         numRuns = Int32,
-        gameConfig = Gui.GameConfig
+        gameConfig = GameConfig
     }
 
     pub def parseHelper(args: List[String], config: CliConfig): CliConfig \ Abort = match args {

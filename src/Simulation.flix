@@ -60,12 +60,12 @@ mod Simulation {
         println("${westScore},${eastScore}")
     }
 
-    pub def simulate(config: Gui.GameConfig): Vector[Pitch] \ IO = {
+    pub def simulate(config: GameConfig): Vector[Pitch] \ IO = {
         let box = initWithConfig(config);
         runGame(box)
     }
 
-    def defaultConfig(): Gui.GameConfig = {
+    def defaultConfig(): GameConfig = {
         westPlayers = Map#{
             "West Striker" => Bots.mkBot(Bots.approachCircleAndShoot),
             "West Goalie" => Bots.mkBot(Bots.defend)
@@ -77,7 +77,7 @@ mod Simulation {
         }
     }
 
-    pub def initWithConfig(config: Gui.GameConfig): MarshallBox \ IO = {
+    pub def initWithConfig(config: GameConfig): MarshallBox \ IO = {
         let world = mkWorld();
         let ball = mkBall(world);
         addGoalWalls(world);

@@ -1,29 +1,25 @@
 mod Bots {
+    use Bots.betweenBallAndGoal
     use Math.Random
 
     pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
         (pitch, player) -> eidentity(f(pitch, player))
     }
 
-
     pub def bots(): Map[String, Bot] = Map#{
-        "Stay Still" => mkBot(stayStill),
-        "Run at Ball" => mkBot(runAtBall),
-        "Run from Ball" => mkBot(runFromBall),
-        "Run at Future Ball" => mkBot(runAtFutureBall),
-        "Wander" => mkBot(wander),
-        "Intercept Ball" => mkBot(interceptBall),
+        "Immobile" => mkBot(stayStill),
+        "RunAtBall" => mkBot(runAtBall),
         "Defend" => mkBot(defend),
-        "Defend own Goal" => mkBot(defendOwnGoal),
-        "Avoid Goalie" => mkBot(avoidGoalie),
+        "BetweenBallAndGoal" => mkBot(betweenBallAndGoal),
+        "AvoidGoalie" => mkBot(avoidGoalie),
         "Shoot" => mkBot(shoot),
-        "Shoot Harder" => mkBot(shootHarder),
-        "Shoot Smarter" => mkBot(shootSmarter),
-        "Circle and Shoot" => mkBot(circleAndShoot),
-        "Close Circle and Shoot" => mkBot(closeCircleAndShoot),
-        "Close Circle and Shoot Hard" => mkBot(closeCircleAndShootHard),
-        "Approach, Circle, and Shoot" => mkBot(approachCircleAndShoot),
-        "Approach, Circle, and Shoot Hard" => mkBot(approachCircleAndShootHard)
+        "ShootHarder" => mkBot(shootHarder),
+        "ShootSmarter" => mkBot(shootSmarter),
+        "CircleShoot" => mkBot(circleAndShoot),
+        "CloseCircleShoot" => mkBot(closeCircleAndShoot),
+        "CloseCircleShootHard" => mkBot(closeCircleAndShootHard),
+        "ApproachCircleShoot" => mkBot(approachCircleAndShoot),
+        "ApproachCircleShootHard" => mkBot(approachCircleAndShootHard)
     }
 
     def goalCenter(team: Team): Location = match team {
@@ -45,35 +41,10 @@ mod Bots {
         { ux = 0.0, uy = 0.0 }
     }
 
-    // runs away from the ball
-    pub def runFromBall(pitch: Pitch, me: Player): Direction = {
-        Direction.fromTo(pitch#ballLocation, me#location)
-    }
-
-    // picks a random direction each tick — jittery but fun as a baseline
-    pub def wander(_pitch: Pitch, _me: Player): Direction \ Random = {
-        let dx = Random.randomFloat64() - 0.5;
-        let dy = Random.randomFloat64() - 0.5;
-        Displacement.getDirection({ dx = dx, dy = dy })
-    }
-
-    // chases where the ball will be ~0.5 s from now (uses ball velocity)
-    pub def interceptBall(pitch: Pitch, me: Player): Direction = {
-        let lookahead = 0.5;
-        let future = {
-            x = pitch#ballLocation#x + pitch#ballVelocity#dx * lookahead,
-            y = pitch#ballLocation#y + pitch#ballVelocity#dy * lookahead
-        };
-        Direction.fromTo(me#location, future)
-    }
-
     // stays halfway between own goal and the ball
-    pub def defendOwnGoal(pitch: Pitch, me: Player): Direction = {
+    pub def betweenBallAndGoal(pitch: Pitch, me: Player): Direction = {
         let ownGoal = goalCenter(me#team);
-        let target = {
-            x = (ownGoal#x + pitch#ballLocation#x) / 2.0,
-            y = pitch#ballLocation#y / 2.0
-        };
+        let target = Location.midpoint(ownGoal, pitch#ballLocation);
         Direction.fromTo(me#location, target)
     }
 
@@ -178,7 +149,6 @@ mod Bots {
 
     def circleAndShootAt(goal: Location, pitch: Pitch, me: Player): Direction = {
         // runs in a circle that is tangent to the proper shooting angle
-        // bug: this isn't quite the proper shooting angle because it does not take into account player / ball radius
 
         let target = contactPoint(goal, pitch);
         let ballToGoal = Direction.fromTo(pitch#ballLocation, goal);
@@ -332,26 +302,6 @@ mod Bots {
 
         let target = contactPointFor(goal, ball);
         Direction.fromTo(me#location, target)
-    }
-
-    pub def runAtFutureBall(pitch: Pitch, me: Player): Direction = {
-        let ballVelocity = pitch#ballVelocity;
-        let ballDirection = Velocity.toDirection(ballVelocity);
-        let ballToMe = Direction.fromTo(pitch#ballLocation, me#location);
-        let epsilon = Direction.angle(ballDirection, ballToMe);
-
-        let ballSpeed = Velocity.speed(ballVelocity);
-        let mySpeed = Velocity.speed(me#velocity);
-
-        // If I don't have a speed then I can't calculate
-        // and if the ball doesn't have a speed then I might as well run at it.
-        if (mySpeed < 0.01 or ballSpeed < 0.01) {
-            runAtBall(pitch, me)
-        } else {
-            let theta = Trig.asin(ballSpeed / mySpeed * Trig.sin(epsilon));
-            let meToBall = Direction.invert(ballToMe);
-            Direction.addAngle(meToBall, theta)
-        }
     }
 
     pub def isBehindGoal(loc: Location): Bool = {

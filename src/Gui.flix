@@ -1,4 +1,8 @@
 mod Gui {
+    import java.util.Objects
+    import java.lang.Object
+    import java.awt.Component
+    import javax.swing.JList
     import java.awt.LayoutManager
     import java.awt.CardLayout
     import javax.swing.SwingUtilities
@@ -36,6 +40,7 @@ mod Gui {
     import javax.swing.JColorChooser
     import javax.swing.BoxLayout
     import java.awt.GridLayout
+    import javax.swing.DefaultListCellRenderer
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -52,32 +57,22 @@ mod Gui {
         let westBots = MutMap.empty(Static);
         let eastBots = MutMap.empty(Static);
         let westColor = Ref.fresh(Static, Color.RED);
-        // let eastColor = Ref.fresh(Static, Color.BLUE);
+        let eastColor = Ref.fresh(Static, Color.BLUE);
 
         let westPanel = new JPanel();
         let westNameField = new JTextField("West");
-        let westColorButton = new JButton("Color");
-        westColorButton.setBackground(Color.RED);
+        let westColorChooser = mkColorChooser(westColor);
         let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
         westPanel.add(westNameField);
-        westPanel.add(westColorButton);
+        westPanel.add(westColorChooser);
         westPanel.add(westPlayersPanel);
-
-        def onClickWestChangeColor(_) = {
-            let color = JColorChooser.showDialog(mainPanel, "West Team Color", Ref.get(westColor));
-            Ref.put(color, westColor);
-            westColorButton.setBackground(color);
-            westColorButton.setForeground(Utils.textColorForBackground(color))
-        };
-        westColorButton.addActionListener(Utils.mkActionListener(onClickWestChangeColor));
 
         let eastPanel = new JPanel();
         let eastNameField = new JTextField("East");
-        let eastColorButton = new JButton("Color");
-        eastColorButton.setBackground(Color.BLUE);
+        let eastColorChooser = mkColorChooser(eastColor);
         let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
         eastPanel.add(eastNameField);
-        eastPanel.add(eastColorButton);
+        eastPanel.add(eastColorChooser);
         eastPanel.add(eastPlayersPanel);
 
         let teamsPanel = new JPanel();
@@ -102,6 +97,54 @@ mod Gui {
         mainPanel.add(goButton);
         mainPanel.setLocationRelativeTo(null);
         mainPanel.setVisible(true)
+    }
+
+    def mkColorChooser(colorHolder: Ref[Color, Static]): JComboBox[(String, Color)] \ IO = {
+        let options = Vector#{
+            ("Magenta", Color.MAGENTA),
+            ("Pink", Color.PINK),
+            ("Red", Color.RED),
+            ("Orange", Color.ORANGE),
+            ("Yellow", Color.YELLOW),
+            ("Green", Color.GREEN),
+            ("Blue", Color.BLUE),
+            ("Cyan", Color.CYAN),
+            ("White", Color.WHITE),
+            ("Light Gray", Color.LIGHT_GRAY),
+            ("Gray", Color.GRAY),
+            ("Dark Gray", Color.DARK_GRAY),
+            ("Black", Color.BLACK)
+        };
+        let chooser = new JComboBox(options);
+
+        let initial = options |> Vector.findIndexOf(match (_name, color) -> Ref.get(colorHolder).equals(color)) |> Utils.unsafeGetOpt;
+
+        chooser.setSelectedIndex(initial);
+
+        let renderer = new DefaultListCellRenderer {
+            def getListCellRendererComponent(this: DefaultListCellRenderer, list: JList[Object], value: Object, index: Int32, isSelected: Bool, cellHasFocus: Bool): Component \ IO = {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                let (name, color) = unchecked_cast(value as (String, Color));
+                this.setText(name);
+                this.setBackground(color);
+                this.setForeground(Utils.textColorForBackground(color));
+                checked_cast(this)
+            }
+        };
+        chooser.setRenderer(renderer);
+
+        def onChooseColor(_) = {
+            let (_name, color) = guard(chooser.getItemAt(chooser.getSelectedIndex()));
+            Ref.put(color, colorHolder)
+        };
+        chooser.addActionListener(Utils.mkActionListener(onChooseColor));
+
+        chooser
+    }
+
+    // remove when fixed: https://github.com/flix/flix/issues/12970
+    def guard(x: a): a = {
+        unchecked_cast(unchecked_cast(x as Object) as a)
     }
 
     def validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {

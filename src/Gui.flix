@@ -1,4 +1,5 @@
 mod Gui {
+    import java.awt.LayoutManager
     import java.awt.CardLayout
     import javax.swing.SwingUtilities
     import java.awt.BasicStroke
@@ -51,11 +52,21 @@ mod Gui {
         let eastBots = MutMap.empty(Static);
 
         let westPanel = new JPanel();
+        let westNameField = new JTextField("West");
+        let westColorButton = new JButton("Change Color");
+        westColorButton.setBackground(Color.RED);
         let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
+        westPanel.add(westNameField);
+        westPanel.add(westColorButton);
         westPanel.add(westPlayersPanel);
 
         let eastPanel = new JPanel();
+        let eastNameField = new JTextField("East");
+        let eastColorButton = new JButton("Change Color");
+        eastColorButton.setBackground(Color.BLUE);
         let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
+        eastPanel.add(eastNameField);
+        eastPanel.add(eastColorButton);
         eastPanel.add(eastPlayersPanel);
 
         let teamsPanel = new JPanel();

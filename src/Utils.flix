@@ -1,4 +1,6 @@
 mod Utils {
+    import java.awt.color.ColorSpace
+    import java.awt.Color
     import java.awt.event.ActionEvent
     import java.awt.event.ActionListener
     import java.lang.Runnable
@@ -57,5 +59,47 @@ mod Utils {
 
     pub def clampInt32(min: {min = Int32}, max: {max = Int32}, value: Int32): Int32 = {
         value |> Int32.min(max#max) |> Int32.max(min#min)
+    }
+
+    // https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color
+    pub def getRelLuminance(c: Color): Float64 = {
+        unsafe IO {
+            def toFraction(i) = Int32.toFloat64(i) / 255.0f64;
+
+            def linearize(f) = {
+                if (f <= 0.04045) {
+                    f / 12.92
+                } else {
+                    Float64.pow(base = (f + 0.055) / 1.055, 2.4)
+                }
+            };
+
+            let r  = c.getRed() |> toFraction |> linearize;
+            let g  = c.getGreen() |> toFraction |> linearize;
+            let b  = c.getBlue() |> toFraction |> linearize;
+
+            0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+    }
+
+    pub def contrast(c1: Color, c2: Color): Float64 = {
+        let lum1 = getRelLuminance(c1);
+        let lum2 = getRelLuminance(c2);
+
+        let lighter = Float64.max(lum1, lum2);
+        let darker = Float64.min(lum1, lum2);
+
+        (lighter + 0.05) / (darker + 0.05)
+    }
+
+    pub def textColorForBackground(c: Color): Color = {
+        let whiteContrast = contrast(c, Color.WHITE);
+        let blackContrast = contrast(c, Color.BLACK);
+
+        if (whiteContrast > blackContrast) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
     }
 }

@@ -33,6 +33,7 @@ mod Gui {
     import javax.swing.JCheckBox
     import javax.swing.JTextField
     import javax.swing.JComboBox
+    import javax.swing.JColorChooser
     import javax.swing.BoxLayout
     import java.awt.GridLayout
 
@@ -50,19 +51,29 @@ mod Gui {
         let panelIndex = Ref.fresh(Static, 0);
         let westBots = MutMap.empty(Static);
         let eastBots = MutMap.empty(Static);
+        let westColor = Ref.fresh(Static, Color.RED);
+        // let eastColor = Ref.fresh(Static, Color.BLUE);
 
         let westPanel = new JPanel();
         let westNameField = new JTextField("West");
-        let westColorButton = new JButton("Change Color");
+        let westColorButton = new JButton("Color");
         westColorButton.setBackground(Color.RED);
         let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
         westPanel.add(westNameField);
         westPanel.add(westColorButton);
         westPanel.add(westPlayersPanel);
 
+        def onClickWestChangeColor(_) = {
+            let color = JColorChooser.showDialog(mainPanel, "West Team Color", Ref.get(westColor));
+            Ref.put(color, westColor);
+            westColorButton.setBackground(color);
+            westColorButton.setForeground(Utils.textColorForBackground(color))
+        };
+        westColorButton.addActionListener(Utils.mkActionListener(onClickWestChangeColor));
+
         let eastPanel = new JPanel();
         let eastNameField = new JTextField("East");
-        let eastColorButton = new JButton("Change Color");
+        let eastColorButton = new JButton("Color");
         eastColorButton.setBackground(Color.BLUE);
         let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
         eastPanel.add(eastNameField);

@@ -42,6 +42,7 @@ mod Gui {
     import javax.swing.BoxLayout
     import java.awt.GridLayout
     import javax.swing.DefaultListCellRenderer
+    import javax.swing.SwingConstants
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -151,15 +152,20 @@ mod Gui {
     def mkColorIcon(color: Color): Icon \ IO = {
         let diameter = 8;
         new Icon {
-            def getIconWidth(_this: Icon): Int32 = diameter
-            def getIconHeight(_this: Icon): Int32 = diameter
+            def getIconWidth(_this: Icon): Int32 = diameter + 2
+            def getIconHeight(_this: Icon): Int32 = diameter + 2
             def paintIcon(_this: Icon, _comp: Component, g: Graphics, x: Int32, y: Int32): Unit \ IO = {
                 let g2 = unchecked_cast(g as Graphics2D);
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                let xf = Int32.toFloat64(x);
+                let yf = Int32.toFloat64(y);
+                let df = Int32.toFloat64(diameter);
+                // 1 pixel of padding for stroke width
+                let shape = new Ellipse2D$Double(xf + 1.0, yf + 1.0, df, df);
                 g2.setColor(color);
-                g2.fillOval(x, y, diameter, diameter);
+                g2.fill(shape);
                 g2.setColor(Color.BLACK);
-                g2.drawOval(x, y, diameter, diameter)
+                g2.draw(shape)
             }
         }
     }
@@ -281,10 +287,12 @@ mod Gui {
         timeLabel.setText("0.0");
         
         let westScoreLabel = new JLabel();
-        westScoreLabel.setForeground(config#westTeamColor);
+        westScoreLabel.setHorizontalTextPosition(SwingConstants.RIGHT);
         westScoreLabel.setText("0");
+        westScoreLabel.setIcon(mkColorIcon(config#westTeamColor));
         let eastScoreLabel = new JLabel();
-        eastScoreLabel.setForeground(config#eastTeamColor);
+        eastScoreLabel.setHorizontalTextPosition(SwingConstants.LEFT);
+        eastScoreLabel.setIcon(mkColorIcon(config#eastTeamColor));
         eastScoreLabel.setText("0");
 
         scorePanel.add(westScoreLabel);

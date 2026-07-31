@@ -89,19 +89,28 @@ mod Simulation {
 
         let players = westPlayers `Map.union` eastPlayers;
 
-        // TODO add a check that names are unique
+        let lastContact = Ref.fresh(Static, None);
+        def onCollision(body1: Body, body2: Body): Unit = {
+            match (getUserData(body1), getUserData(body2)) {
+                case (UserData.Player(p), UserData.Ball) =>
+                    Ref.put(Some(p), lastContact)
+                case (UserData.Ball, UserData.Player(p)) =>
+                    Ref.put(Some(p), lastContact)
+                case _ => ()
+            }
+        };
 
         // All the refs here are placeholders
         let box = {
             world = world,
             players = players,
             ball = ball,
+            lastContact = lastContact,
             timeMs = Ref.fresh(Static, 0),
             state = Ref.fresh(Static, GameState.PreGame({ remainingMs = 0 })),
             preGameJunk = MutList.empty(Static),
             westScore = Ref.fresh(Static, 0),
-            eastScore = Ref.fresh(Static, 0),
-            lastContact = Ref.fresh(Static, None)
+            eastScore = Ref.fresh(Static, 0)
         };
 
         resetGame(box);
@@ -111,15 +120,21 @@ mod Simulation {
 
     enum UserData {
         case Player(String)
-        case _Ball
+        case Ball
+        case Other
     }
 
     def _setUserData(data: UserData, b: Body): Unit \ IO = {
         b.setUserData(data)
     }
 
-    def _getUserData(b: Body): UserData \ IO = {
-        unchecked_cast(b.getUserData() as UserData)
+    def getUserData(b: Body): UserData \ IO = {
+        let raw = b.getUserData();
+        if (Object.isNull(raw)) {
+            UserData.Other
+        } else {
+            unchecked_cast(raw as UserData)
+        }
     }
 
     def mkPlayer(world: World[Body], name: String, team: Team, bot: Bot): PhysicsPlayer \ IO = {

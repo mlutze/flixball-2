@@ -1,4 +1,7 @@
 mod Utils {
+    import org.dyn4j.world.BroadphaseCollisionData
+    import org.dyn4j.world.listener.CollisionListenerAdapter
+    import org.dyn4j.world.listener.CollisionListener
     import java.awt.color.ColorSpace
     import java.awt.Color
     import java.awt.event.ActionEvent
@@ -9,6 +12,8 @@ mod Utils {
     import javax.swing.event.ChangeListener
     import javax.swing.event.DocumentEvent
     import javax.swing.event.DocumentListener
+
+    import org.dyn4j.dynamics.Body
 
     pub def mkRunnable(f: Unit -> Unit \ ef): Runnable \ IO = {
         new Runnable {
@@ -40,6 +45,18 @@ mod Utils {
             def insertUpdate(_this: DocumentListener, e: DocumentEvent): Unit \ ef = f(e)
             def removeUpdate(_this: DocumentListener, e: DocumentEvent): Unit \ ef = f(e)
         }
+    }
+
+    pub def mkCollisionListener(f: (Body, Body) -> Unit \ ef): CollisionListener[Body, Body] = {
+        let adapter = new CollisionListenerAdapter[Body, Body] {
+            def collision(_this: CollisionListenerAdapter[Body, Body], data: BroadphaseCollisionData[Body, Body]): Bool \ IO = {
+                let b1 = data.getBody1();
+                let b2 = data.getBody2();
+                f(b1, b2);
+                true
+            }
+        };
+        checked_cast(adapter)
     }
 
     pub def unsafeGetOpt(opt: Option[a]): a = {

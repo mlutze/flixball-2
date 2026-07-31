@@ -7,3 +7,4 @@ authors     = ["Matthew Lutze"]
 
 [mvn-dependencies]
 "org.dyn4j:dyn4j" = "5.0.2"
+"com.formdev:flatlaf" = "3.7.2"

@@ -85,7 +85,13 @@ mod Gui {
         def onClickGo(_) = {
             let config = mkGameConfig(westBots, eastBots);
             let frames = Simulation.simulate(config);
-            mkSimulationPage(frames);
+            let displayConfig = {
+                westTeamName = westNameField.getText(),
+                westTeamColor = Ref.get(westColor),
+                eastTeamName = eastNameField.getText(),
+                eastTeamColor = Ref.get(eastColor)
+            };
+            mkSimulationPage(frames, displayConfig);
             mainPanel.dispose()
 
         };
@@ -266,7 +272,7 @@ mod Gui {
         unchecked_cast(box.getSelectedItem() as a)
     }
 
-    pub def mkSimulationPage(frames: Vector[Pitch]): Unit \ IO = {
+    pub def mkSimulationPage(frames: Vector[Pitch], config: DisplayConfig): Unit \ IO = {
         let updatingSlider = Guard.fresh(Static);
         let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute });
 
@@ -275,10 +281,10 @@ mod Gui {
         timeLabel.setText("0.0");
         
         let westScoreLabel = new JLabel();
-        westScoreLabel.setForeground(Color.RED);
+        westScoreLabel.setForeground(config#westTeamColor);
         westScoreLabel.setText("0");
         let eastScoreLabel = new JLabel();
-        eastScoreLabel.setForeground(Color.BLUE);
+        eastScoreLabel.setForeground(config#eastTeamColor);
         eastScoreLabel.setText("0");
 
         scorePanel.add(westScoreLabel);
@@ -312,7 +318,7 @@ mod Gui {
                 //     None
                 // };
                 let dirs = None;
-                Rendering.renderPitch(g2, pitch, dirs)
+                Rendering.renderPitch(g2, pitch, config, dirs)
             }
         };
 

@@ -105,13 +105,13 @@ mod Rendering {
         g.draw(new Arc2D$Double(swX - carc, swY - carc, carcSize, carcSize, 270.0, 90.0, Arc2D.OPEN))
     }
 
-    pub def renderPlayer(g: Graphics2D, player: Player): Unit \ IO = {
+    pub def renderPlayer(g: Graphics2D, config: DisplayConfig, player: Player): Unit \ IO = {
         let cornerX = player#location#x - playerRadius();
         let cornerY = player#location#y - playerRadius();
         let circle = new Ellipse2D$Double(cornerX, cornerY, playerRadius() * 2.0, playerRadius() * 2.0);
         let color = match player#team {
-            case Team.West => Color.RED
-            case Team.East => Color.BLUE
+            case Team.West => config#westTeamColor
+            case Team.East => config#eastTeamColor
         };
         g.setColor(color);
         g.fill(circle);
@@ -164,12 +164,12 @@ mod Rendering {
     }
 
     // renders the player forces if dirsOpt is not None
-    pub def renderPitch(g: Graphics2D, pitch: Pitch, dirsOpt: Option[Map[String, Direction]]): Unit \ IO = {
+    pub def renderPitch(g: Graphics2D, pitch: Pitch, config: DisplayConfig, dirsOpt: Option[Map[String, Direction]]): Unit \ IO = {
         renderBackground(g);
         foreach (
             player <- Map.valuesOf(pitch#players)
         ) {
-            renderPlayer(g, player);
+            renderPlayer(g, config, player);
             match dirsOpt {
                 case None => ()
                 case Some(dirs) =>

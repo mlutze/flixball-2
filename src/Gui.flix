@@ -1,4 +1,5 @@
 mod Gui {
+    import com.formdev.flatlaf.FlatLightLaf
     import javax.swing.Icon
     import java.util.Objects
     import java.lang.Object
@@ -49,6 +50,7 @@ mod Gui {
     import java.lang.System
 
     pub def runWithGui(): Unit \ IO = {
+        FlatLightLaf.setup();
         mkSetupPage()
     }
 

@@ -1,4 +1,10 @@
 mod Gui {
+    import javax.swing.Icon
+    import java.util.Objects
+    import java.lang.Object
+    import java.awt.Component
+    import javax.swing.JList
+    import java.awt.LayoutManager
     import java.awt.CardLayout
     import javax.swing.SwingUtilities
     import java.awt.BasicStroke
@@ -32,8 +38,10 @@ mod Gui {
     import javax.swing.JCheckBox
     import javax.swing.JTextField
     import javax.swing.JComboBox
+    import javax.swing.JColorChooser
     import javax.swing.BoxLayout
     import java.awt.GridLayout
+    import javax.swing.DefaultListCellRenderer
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -49,13 +57,23 @@ mod Gui {
         let panelIndex = Ref.fresh(Static, 0);
         let westBots = MutMap.empty(Static);
         let eastBots = MutMap.empty(Static);
+        let westColor = Ref.fresh(Static, Color.RED);
+        let eastColor = Ref.fresh(Static, Color.BLUE);
 
         let westPanel = new JPanel();
+        let westNameField = new JTextField("West");
+        let westColorChooser = mkColorChooser(westColor);
         let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
+        westPanel.add(westNameField);
+        westPanel.add(westColorChooser);
         westPanel.add(westPlayersPanel);
 
         let eastPanel = new JPanel();
+        let eastNameField = new JTextField("East");
+        let eastColorChooser = mkColorChooser(eastColor);
         let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
+        eastPanel.add(eastNameField);
+        eastPanel.add(eastColorChooser);
         eastPanel.add(eastPlayersPanel);
 
         let teamsPanel = new JPanel();
@@ -67,7 +85,13 @@ mod Gui {
         def onClickGo(_) = {
             let config = mkGameConfig(westBots, eastBots);
             let frames = Simulation.simulate(config);
-            mkSimulationPage(frames);
+            let displayConfig = {
+                westTeamName = westNameField.getText(),
+                westTeamColor = Ref.get(westColor),
+                eastTeamName = eastNameField.getText(),
+                eastTeamColor = Ref.get(eastColor)
+            };
+            mkSimulationPage(frames, displayConfig);
             mainPanel.dispose()
 
         };
@@ -80,6 +104,69 @@ mod Gui {
         mainPanel.add(goButton);
         mainPanel.setLocationRelativeTo(null);
         mainPanel.setVisible(true)
+    }
+
+    def mkColorChooser(colorHolder: Ref[Color, Static]): JComboBox[(String, Color)] \ IO = {
+        let options = Vector#{
+            ("Magenta", Color.MAGENTA),
+            ("Pink", Color.PINK),
+            ("Red", Color.RED),
+            ("Orange", Color.ORANGE),
+            ("Yellow", Color.YELLOW),
+            ("Green", Color.GREEN),
+            ("Blue", Color.BLUE),
+            ("Cyan", Color.CYAN),
+            ("White", Color.WHITE),
+            ("Light Gray", Color.LIGHT_GRAY),
+            ("Gray", Color.GRAY),
+            ("Dark Gray", Color.DARK_GRAY),
+            ("Black", Color.BLACK)
+        };
+        let chooser = new JComboBox(options);
+
+        let initial = options |> Vector.findIndexOf(match (_name, color) -> Ref.get(colorHolder).equals(color)) |> Utils.unsafeGetOpt;
+
+        chooser.setSelectedIndex(initial);
+
+        let renderer = new DefaultListCellRenderer {
+            def getListCellRendererComponent(this: DefaultListCellRenderer, list: JList[Object], value: Object, index: Int32, isSelected: Bool, cellHasFocus: Bool): Component \ IO = {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                let (name, color) = unchecked_cast(value as (String, Color));
+                this.setText(name);
+                this.setIcon(mkColorIcon(color));
+                checked_cast(this)
+            }
+        };
+        chooser.setRenderer(renderer);
+
+        def onChooseColor(_) = {
+            let (_name, color) = guard(chooser.getItemAt(chooser.getSelectedIndex()));
+            Ref.put(color, colorHolder)
+        };
+        chooser.addActionListener(Utils.mkActionListener(onChooseColor));
+
+        chooser
+    }
+
+    def mkColorIcon(color: Color): Icon \ IO = {
+        let diameter = 8;
+        new Icon {
+            def getIconWidth(_this: Icon): Int32 = diameter
+            def getIconHeight(_this: Icon): Int32 = diameter
+            def paintIcon(_this: Icon, _comp: Component, g: Graphics, x: Int32, y: Int32): Unit \ IO = {
+                let g2 = unchecked_cast(g as Graphics2D);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillOval(x, y, diameter, diameter);
+                g2.setColor(Color.BLACK);
+                g2.drawOval(x, y, diameter, diameter)
+            }
+        }
+    }
+
+    // remove when fixed: https://github.com/flix/flix/issues/12970
+    def guard(x: a): a = {
+        unchecked_cast(unchecked_cast(x as Object) as a)
     }
 
     def validate(eastBots: MutMap[Int32, BotLine, Static], westBots: MutMap[Int32, BotLine, Static]): Bool \ IO = {
@@ -185,7 +272,7 @@ mod Gui {
         unchecked_cast(box.getSelectedItem() as a)
     }
 
-    pub def mkSimulationPage(frames: Vector[Pitch]): Unit \ IO = {
+    pub def mkSimulationPage(frames: Vector[Pitch], config: DisplayConfig): Unit \ IO = {
         let updatingSlider = Guard.fresh(Static);
         let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute });
 
@@ -194,10 +281,10 @@ mod Gui {
         timeLabel.setText("0.0");
         
         let westScoreLabel = new JLabel();
-        westScoreLabel.setForeground(Color.RED);
+        westScoreLabel.setForeground(config#westTeamColor);
         westScoreLabel.setText("0");
         let eastScoreLabel = new JLabel();
-        eastScoreLabel.setForeground(Color.BLUE);
+        eastScoreLabel.setForeground(config#eastTeamColor);
         eastScoreLabel.setText("0");
 
         scorePanel.add(westScoreLabel);
@@ -231,7 +318,7 @@ mod Gui {
                 //     None
                 // };
                 let dirs = None;
-                Rendering.renderPitch(g2, pitch, dirs)
+                Rendering.renderPitch(g2, pitch, config, dirs)
             }
         };
 

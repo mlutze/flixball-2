@@ -1,4 +1,5 @@
 mod Gui {
+    import javax.swing.Icon
     import java.util.Objects
     import java.lang.Object
     import java.awt.Component
@@ -126,8 +127,7 @@ mod Gui {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 let (name, color) = unchecked_cast(value as (String, Color));
                 this.setText(name);
-                this.setBackground(color);
-                this.setForeground(Utils.textColorForBackground(color));
+                this.setIcon(mkColorIcon(color));
                 checked_cast(this)
             }
         };
@@ -140,6 +140,22 @@ mod Gui {
         chooser.addActionListener(Utils.mkActionListener(onChooseColor));
 
         chooser
+    }
+
+    def mkColorIcon(color: Color): Icon \ IO = {
+        let diameter = 8;
+        new Icon {
+            def getIconWidth(_this: Icon): Int32 = diameter
+            def getIconHeight(_this: Icon): Int32 = diameter
+            def paintIcon(_this: Icon, _comp: Component, g: Graphics, x: Int32, y: Int32): Unit \ IO = {
+                let g2 = unchecked_cast(g as Graphics2D);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillOval(x, y, diameter, diameter);
+                g2.setColor(Color.BLACK);
+                g2.drawOval(x, y, diameter, diameter)
+            }
+        }
     }
 
     // remove when fixed: https://github.com/flix/flix/issues/12970

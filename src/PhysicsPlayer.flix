@@ -5,5 +5,6 @@ pub type alias PhysicsPlayer = {
     body = Body,
     team = Team,
     bot = Bot,
-    state = Ref[Int8, Static]
+    state = Ref[Int8, Static],
+    lastForce = Ref[Direction, Static]
 }

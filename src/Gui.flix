@@ -280,7 +280,7 @@ mod Gui {
         unchecked_cast(box.getSelectedItem() as a)
     }
 
-    pub def mkSimulationPage(frames: Vector[Pitch], config: DisplayConfig): Unit \ IO = {
+    pub def mkSimulationPage(frames: Vector[Frame], config: DisplayConfig): Unit \ IO = {
         let updatingSlider = Guard.fresh(Static);
         let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute });
 
@@ -321,13 +321,14 @@ mod Gui {
                 g2.setStroke(new BasicStroke(0.05f32));
 
                 let idx = getCurrentFrame(Ref.get(anchor));
-                let pitch = Vector.get(idx, frames);
-                // let dirs = if (Ref.get(forcesRef)) {
-                //     Some(getAiDirections(marshallBox))
-                // } else {
-                //     None
-                // };
-                let dirs = None;
+                let frame = Vector.get(idx, frames);
+                let pitch = frame#pitch;
+                let metadata = frame#metadata;
+                let dirs = if (Ref.get(forcesRef)) {
+                    Some(metadata#forces)
+                } else {
+                    None
+                };
                 Rendering.renderPitch(g2, pitch, config, dirs)
             }
         };
@@ -365,8 +366,8 @@ mod Gui {
             updatingSlider |> Guard.ifOpen(
                 () ->
                     let value = syncFromSlider(anchor, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(value, frames);
+                    refreshDisplay(frame, display)
             )
         };
 
@@ -379,8 +380,8 @@ mod Gui {
                     let value = 0;
                     setAnchor(value, anchor);
                     discard syncToSlider(anchor, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(value, frames);
+                    refreshDisplay(frame, display)
                 }
             )
         };
@@ -395,8 +396,8 @@ mod Gui {
                     let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
                     setAnchor(newValue, anchor);
                     discard syncToSlider(anchor, slider);
-                    let pitch = Vector.get(newValue, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(newValue, frames);
+                    refreshDisplay(frame, display)
             )
         };
 
@@ -424,8 +425,8 @@ mod Gui {
                     let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
                     setAnchor(newValue, anchor);
                     discard syncToSlider(anchor, slider);
-                    let pitch = Vector.get(newValue, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(newValue, frames);
+                    refreshDisplay(frame, display)
             )
         };
 
@@ -437,8 +438,8 @@ mod Gui {
                     let value = Vector.length(frames) - 1;
                     setAnchor(value, anchor);
                     discard syncToSlider(anchor, slider);
-                    let pitch = Vector.get(value, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(value, frames);
+                    refreshDisplay(frame, display)
             )
         };
 
@@ -503,13 +504,13 @@ mod Gui {
     }
 
     def refreshDisplay(
-        pitch: Pitch,
+        frame: Frame,
         display: Display
     ): Unit \ IO = {
         display#pitch.repaint();
-        display#time.setText(formatTimeMs(pitch#timeMs));
-        display#westScore.setText("${pitch#westScore}");
-        display#eastScore.setText("${pitch#eastScore}")
+        display#time.setText(formatTimeMs(frame#pitch#timeMs));
+        display#westScore.setText("${frame#pitch#westScore}");
+        display#eastScore.setText("${frame#pitch#eastScore}")
     }
 
     type alias Anchor = {
@@ -544,7 +545,7 @@ mod Gui {
     }
 
     def makeGameLoop(
-        frames: Vector[Pitch],
+        frames: Vector[Frame],
         anchor: Ref[Anchor, Static],
         display: Display,
         slider: JSlider,
@@ -566,8 +567,8 @@ mod Gui {
                         () ->
                             slider.setValue(i)
                     );
-                    let pitch = Vector.get(i, frames);
-                    refreshDisplay(pitch, display)
+                    let frame = Vector.get(i, frames);
+                    refreshDisplay(frame, display)
                 }
             }
         };

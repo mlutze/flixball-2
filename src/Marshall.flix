@@ -36,4 +36,13 @@ mod Marshall {
         }
     }
 
+    pub def makeMetadata(box: MarshallBox): Metadata \ IO = {
+        let forces = box#players |> Map.map(
+            physPlayer -> Ref.get(physPlayer#lastForce)
+        );
+        {
+            forces = forces
+        }
+    }
+
 }

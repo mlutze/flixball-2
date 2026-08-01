@@ -60,7 +60,7 @@ mod Simulation {
         println("${westScore},${eastScore}")
     }
 
-    pub def simulate(config: GameConfig): Vector[Pitch] \ IO = {
+    pub def simulate(config: GameConfig): Vector[Frame] \ IO = {
         let box = initWithConfig(config);
         runGame(box)
     }
@@ -131,7 +131,8 @@ mod Simulation {
             body = body,
             state = Ref.fresh(Static, 0i8),
             team = team,
-            bot = bot
+            bot = bot,
+            lastForce = Ref.fresh(Static, Direction.north())
         }
     }
 
@@ -291,12 +292,15 @@ mod Simulation {
         continue
     }
 
-    pub def runGame(box: MarshallBox): Vector[Pitch] \ IO = {
+    pub def runGame(box: MarshallBox): Vector[Frame] \ IO = {
         let deltaTs  = 1.0 / Int32.toFloat64(Constants.frameRate());
         let deltaTms = Float64.truncateToInt32(deltaTs * 1000.0);
         let frames = MutList.empty(Static);
         def loop() = {
-            frames |> MutList.push(Marshall.makePitch(box));
+            let pitch = Marshall.makePitch(box);
+            let metadata = Marshall.makeMetadata(box);
+            let frame = { pitch = pitch, metadata = metadata };
+            frames |> MutList.push(frame);
             if (tick(box, deltaTs, deltaTms)) { 
                 loop()
             }
@@ -313,7 +317,8 @@ mod Simulation {
                 case None => unreachable!()
                 case Some(dir) =>
                     let force_ = new Vector2(dir#ux, dir#uy).setMagnitude(playerForce());
-                    discard physPlayer#body.applyForce(force_)
+                    discard physPlayer#body.applyForce(force_);
+                    physPlayer#lastForce |> Ref.put(dir)
             }
         }
     }

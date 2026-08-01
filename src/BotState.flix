@@ -1,5 +1,8 @@
-
-
+/// An effect for maintaining a bot's state between simulation frames.
+/// Bots can only store up to one byte of data.
+/// Authors should generally use the getState and setState helper methods
+/// instead of using the effect directly.
+/// These methods allow the use of any data type that has a Byteable instance.
 eff BotState {
     def getByte(): Int8
     def setByte(b: Int8): Unit

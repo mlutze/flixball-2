@@ -2,10 +2,12 @@ mod Bots {
     use Bots.betweenBallAndGoal
     use Math.Random
 
+    /// Helper function to upcast the effects a bot uses.
     pub def mkBot(f: (Pitch, Player) -> Direction \ BotEffects - ef): Bot = {
         (pitch, player) -> eidentity(f(pitch, player))
     }
 
+    /// Returns all the available bots.
     pub def bots(): Map[String, Bot] = Map#{
         "Immobile" => mkBot(stayStill),
         "RunAtBall" => mkBot(runAtBall),

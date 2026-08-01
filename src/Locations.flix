@@ -9,57 +9,68 @@ mod Locations {
     use Constants.penaltySpotDist
     use Constants.pitchLength
     use Constants.pitchWidth
-    
+
+    /// Northeast corner of the pitch   
     pub def cornerNE(): Location = {
         x =  pitchLength() / 2.0,
         y =  pitchWidth() / 2.0
     }
 
+    /// Northwest corner of the pitch   
     pub def cornerNW(): Location = {
         x = -pitchLength() / 2.0,
         y =  pitchWidth() / 2.0
     }
 
+    /// Southeast corner of the pitch   
     pub def cornerSE(): Location = {
         x =  pitchLength() / 2.0,
         y = -pitchWidth() / 2.0
     }
 
+    /// Southwest corner of the pitch   
     pub def cornerSW(): Location = {
         x = -pitchLength() / 2.0,
         y = -pitchWidth() / 2.0
     }
 
+    /// Center of the pitch
     pub def center(): Location = {
         x = 0.0,
         y = 0.0
     }
 
+    /// North goalpost of the east goal
     pub def goalpostNE(): Location = {
         x =  pitchLength() / 2.0,
         y =  goalWidth() / 2.0
     }
 
+    /// North goalpost of the west goal
     pub def goalpostNW(): Location = {
         x = -pitchLength() / 2.0,
         y =  goalWidth() / 2.0
     }
 
+    /// South goalpost of the east goal
     pub def goalpostSE(): Location = {
         x =  pitchLength() / 2.0,
         y = -goalWidth() / 2.0
     }
 
+    /// South goalpost of the west goal
     pub def goalpostSW(): Location = {
         x = -pitchLength() / 2.0,
         y = -goalWidth() / 2.0
     }
 
+    /// Center of the west goal
     pub def goalCenterW(): Location = {
         x = -pitchLength() / 2.0,
         y = 0.0
     }
 
+    /// Center of the east goal
     pub def goalCenterE(): Location = {
         x = pitchLength() / 2.0,
         y = 0.0

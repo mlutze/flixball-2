@@ -305,7 +305,7 @@ mod Gui {
 
     pub def mkSimulationPage(frames: Vector[Frame], config: DisplayConfig): Unit \ IO = {
         let updatingSlider = Guard.fresh(Static);
-        let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute });
+        let anchor = Ref.fresh(Static, { frame = 0, epoch = Epoch.Absolute, rate = 0, numFrames = Vector.length(frames) });
 
         let scorePanel = new JPanel();
         let timeLabel = new JLabel();
@@ -364,21 +364,21 @@ mod Gui {
         };
 
         let lowerPanel = new JPanel();
-        let slider = new JSlider(0, Vector.length(frames), 0);
+        let slider = new JSlider(0, Vector.length(frames) - 1, 0);
         slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         let buttonPanel = new JPanel();
         let beginningButton = new JButton("⏮");
-        let jumpBackwardButton = new JButton("⏪︎");
+        let fastBackwardButton = new JButton("⏪︎");
         let startButton = new JButton("▶");
-        let jumpForwardButton = new JButton("⏩︎");
+        let fastForwardButton = new JButton("⏩︎");
         let endButton = new JButton("⏭");
         let forcesButton = new JButton("Show Forces");
 
         buttonPanel.add(beginningButton);
-        buttonPanel.add(jumpBackwardButton);
+        buttonPanel.add(fastBackwardButton);
         buttonPanel.add(startButton);
-        buttonPanel.add(jumpForwardButton);
+        buttonPanel.add(fastForwardButton);
         buttonPanel.add(endButton);
         buttonPanel.add(forcesButton);
 
@@ -412,19 +412,18 @@ mod Gui {
         beginningButton.addActionListener(Utils.mkActionListener(onClickBeginning));
 
 
-        def onClickJumpBackward(_): Unit = {
+        def onClickFastBackward(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () ->
-                    let oldValue = getCurrentFrame(Ref.get(anchor));
-                    let newValue = Int32.max(0, oldValue - 10 * Constants.frameRate());
-                    setAnchor(newValue, anchor);
+                    let oldRate = Ref.get(anchor)#rate;
+                    let newRate = Int32.min(-2, oldRate * 2);
                     discard syncToSlider(anchor, slider);
-                    let frame = Vector.get(newValue, frames);
-                    refreshDisplay(frame, display)
+                    gameLoop.start();
+                    unpauseAnchor(newRate, anchor)
             )
         };
 
-        jumpBackwardButton.addActionListener(Utils.mkActionListener(onClickJumpBackward));
+        fastBackwardButton.addActionListener(Utils.mkActionListener(onClickFastBackward));
 
 
         def onClickStartPause(_): Unit = {
@@ -435,25 +434,24 @@ mod Gui {
             } else {
                 startButton.setText("⏸");
                 gameLoop.start();
-                unpauseAnchor(anchor)
+                unpauseAnchor(1, anchor)
             }
         };
 
         startButton.addActionListener(Utils.mkActionListener(onClickStartPause));
 
-        def onClickJumpForward(_): Unit = {
+        def onClickFastForward(_): Unit = {
             updatingSlider |> Guard.withGuard(
                 () ->
-                    let oldValue = getCurrentFrame(Ref.get(anchor));
-                    let newValue = Int32.min(Vector.length(frames) - 1, oldValue + 10 * Constants.frameRate());
-                    setAnchor(newValue, anchor);
+                    let oldRate = Ref.get(anchor)#rate;
+                    let newRate = Int32.max(2, oldRate * 2);
                     discard syncToSlider(anchor, slider);
-                    let frame = Vector.get(newValue, frames);
-                    refreshDisplay(frame, display)
+                    gameLoop.start();
+                    unpauseAnchor(newRate, anchor)
             )
         };
 
-        jumpForwardButton.addActionListener(Utils.mkActionListener(onClickJumpForward));
+        fastForwardButton.addActionListener(Utils.mkActionListener(onClickFastForward));
 
         def onClickEnd(_): Unit = {
             updatingSlider |> Guard.withGuard(
@@ -507,7 +505,9 @@ mod Gui {
 
     def setAnchor(value: Int32, anchor: Ref[Anchor, Static]): Unit \ IO = {
         let epoch = Epoch.Relative(System.currentTimeMillis());
-        Ref.put({ frame = value, epoch = epoch }, anchor)
+        let numFrames = Ref.get(anchor)#numFrames;
+        let rate = Ref.get(anchor)#rate;
+        Ref.put({ frame = value, epoch = epoch, rate = rate, numFrames = numFrames }, anchor)
     }
 
     def syncFromSlider(anchor: Ref[Anchor, Static], slider: JSlider): Int32 \ IO = {
@@ -516,7 +516,9 @@ mod Gui {
             case Epoch.Absolute => Epoch.Absolute
             case Epoch.Relative(_) => Epoch.Relative(System.currentTimeMillis())
         };
-        Ref.put({ frame = value, epoch = epoch }, anchor);
+        let rate = Ref.get(anchor)#rate;
+        let numFrames = Ref.get(anchor)#numFrames;
+        Ref.put({ frame = value, epoch = epoch, rate = rate, numFrames = numFrames }, anchor);
         value
     }
 
@@ -539,7 +541,9 @@ mod Gui {
 
     type alias Anchor = {
         frame = Int32,
-        epoch = Epoch
+        epoch = Epoch,
+        rate = Int32,
+        numFrames = Int32
     }
 
     enum Epoch {
@@ -549,13 +553,16 @@ mod Gui {
 
     def pauseAnchor(anchor: Ref[Anchor, Static]): Unit \ IO = {
         let frame = getCurrentFrame(Ref.get(anchor));
-        Ref.put({ frame = frame, epoch = Epoch.Absolute }, anchor)
+        let numFrames = Ref.get(anchor)#numFrames;
+        let rate = 0;
+        Ref.put({ frame = frame, epoch = Epoch.Absolute, rate = rate, numFrames = numFrames }, anchor)
     }
 
-    def unpauseAnchor(anchor: Ref[Anchor, Static]): Unit \ IO = {
+    def unpauseAnchor(rate: Int32, anchor: Ref[Anchor, Static]): Unit \ IO = {
         let frame = getCurrentFrame(Ref.get(anchor));
+        let numFrames = Ref.get(anchor)#numFrames;
         let epoch = Epoch.Relative(System.currentTimeMillis());
-        Ref.put({ frame = frame, epoch = epoch }, anchor)
+        Ref.put({ frame = frame, epoch = epoch, rate = rate, numFrames = numFrames }, anchor)
     }
 
     def getCurrentFrame(anchor: Anchor): Int32 \ IO = {
@@ -564,8 +571,11 @@ mod Gui {
             case Epoch.Absolute => 0i64
             case Epoch.Relative(time) => now - time
         };
-        let framesPassed = Int64.truncateToInt32(Int32.toInt64(Constants.frameRate()) * diff / 1000i64);
-        anchor#frame + framesPassed
+        let physicsFrameRate = Int32.toInt64(Constants.frameRate());
+        let playbackSpeed = Int32.toInt64(anchor#rate);
+        let framesPassed = Int64.truncateToInt32(physicsFrameRate * diff * playbackSpeed / 1000i64);
+        let desiredFrame = anchor#frame + framesPassed;
+        desiredFrame |> Int32.max(0) |> Int32.min(anchor#numFrames - 1)
     }
 
     def makeGameLoop(

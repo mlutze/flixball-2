@@ -72,8 +72,10 @@ mod Gui {
 
         let teamsPanel = new JPanel();
         teamsPanel.setLayout(new BoxLayout(teamsPanel, BoxLayout.X_AXIS));
+        teamsPanel.add(Box.createHorizontalGlue());
         teamsPanel.add(westPanel);
         teamsPanel.add(eastPanel);
+        teamsPanel.add(Box.createHorizontalGlue());
 
         let goButton = new JButton("Go");
         def onClickGo(_) = {
@@ -485,7 +487,8 @@ mod Gui {
         lowerPanel.add(slider, BorderLayout.NORTH);
         lowerPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        let mainPanel = new JFrame();
+        let title = "${config#westTeamName} vs. ${config#eastTeamName}";
+        let mainPanel = new JFrame(title);
         mainPanel.setLayout(new BorderLayout(0, 0));
         mainPanel.add(pitchPanel, BorderLayout.CENTER);
         mainPanel.add(scorePanel, BorderLayout.NORTH);

@@ -44,6 +44,8 @@ mod Gui {
     import java.awt.GridLayout
     import javax.swing.DefaultListCellRenderer
     import javax.swing.SwingConstants
+    import javax.swing.Box
+    import java.awt.Dimension
 
     import java.lang.{Math => JMath}
     import java.lang.{String => JString}
@@ -62,25 +64,14 @@ mod Gui {
         let eastBots = MutMap.empty(Static);
         let westColor = Ref.fresh(Static, Color.RED);
         let eastColor = Ref.fresh(Static, Color.BLUE);
+        let westName = Ref.fresh(Static, "West");
+        let eastName = Ref.fresh(Static, "East");
 
-        let westPanel = new JPanel();
-        let westNameField = new JTextField("West");
-        let westColorChooser = mkColorChooser(westColor);
-        let westPlayersPanel = makePlayersPanel(panelIndex, westBots, eastBots);
-        westPanel.add(westNameField);
-        westPanel.add(westColorChooser);
-        westPanel.add(westPlayersPanel);
-
-        let eastPanel = new JPanel();
-        let eastNameField = new JTextField("East");
-        let eastColorChooser = mkColorChooser(eastColor);
-        let eastPlayersPanel = makePlayersPanel(panelIndex, eastBots, westBots);
-        eastPanel.add(eastNameField);
-        eastPanel.add(eastColorChooser);
-        eastPanel.add(eastPlayersPanel);
+        let westPanel = mkTeamPanel(westName, westColor, panelIndex, westBots, eastBots);
+        let eastPanel = mkTeamPanel(eastName, eastColor, panelIndex, eastBots, westBots);
 
         let teamsPanel = new JPanel();
-        teamsPanel.setLayout(new GridLayout(1, 2));
+        teamsPanel.setLayout(new BoxLayout(teamsPanel, BoxLayout.X_AXIS));
         teamsPanel.add(westPanel);
         teamsPanel.add(eastPanel);
 
@@ -89,9 +80,9 @@ mod Gui {
             let config = mkGameConfig(westBots, eastBots);
             let frames = Simulation.simulate(config);
             let displayConfig = {
-                westTeamName = westNameField.getText(),
+                westTeamName = Ref.get(westName),
                 westTeamColor = Ref.get(westColor),
-                eastTeamName = eastNameField.getText(),
+                eastTeamName = Ref.get(eastName),
                 eastTeamColor = Ref.get(eastColor)
             };
             mkSimulationPage(frames, displayConfig);
@@ -100,13 +91,43 @@ mod Gui {
         };
         goButton.addActionListener(Utils.mkActionListener(onClickGo));
 
-        mainPanel.setSize(800, 500);
-        mainPanel.setLayout(new FlowLayout());
+        let goPanel = new JPanel();
+        goPanel.add(goButton);
+
+        mainPanel.setSize(1200, 600);
+        mainPanel.setLayout(new BorderLayout());
         mainPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainPanel.add(teamsPanel);
-        mainPanel.add(goButton);
+        mainPanel.add(teamsPanel, BorderLayout.CENTER);
+        mainPanel.add(goPanel, BorderLayout.SOUTH);
         mainPanel.setLocationRelativeTo(null);
         mainPanel.setVisible(true)
+    }
+
+    def mkTeamPanel(name: Ref[String, Static], color: Ref[Color, Static], panelIndex: Ref[Int32, Static], bots: MutMap[Int32, BotLine, Static], opponents: MutMap[Int32, BotLine, Static]): JPanel \ IO = {
+        let mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setPreferredSize(new Dimension(500, 100));
+        mainPanel.setMaximumSize(new Dimension(500, Int32.maxValue()));
+        let innerPanel = new JPanel();
+        innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
+        let playersPanel = makePlayersPanel(panelIndex, bots, opponents);
+        let nameField = mkNameField(name);
+        let colorChooser = mkColorChooser(color);
+        let teamPanel = new JPanel();
+        teamPanel.add(nameField);
+        teamPanel.add(colorChooser);
+        innerPanel.add(teamPanel);
+        innerPanel.add(playersPanel);
+        mainPanel.add(innerPanel, BorderLayout.NORTH);
+        mainPanel
+    }
+
+    def mkNameField(name: Ref[String, Static]): JTextField \ IO = {
+        let field = new JTextField(Ref.get(name), 10);
+        def onChange(_) = {
+            name |> Ref.put(field.getText())
+        };
+        field.getDocument().addDocumentListener(Utils.mkDocumentListener(onChange));
+        field
     }
 
     def mkColorChooser(colorHolder: Ref[Color, Static]): JComboBox[(String, Color)] \ IO = {

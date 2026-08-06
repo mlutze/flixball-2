@@ -1,14 +1,38 @@
 mod Cli {
 
+    pub eff Error {
+        def error(s: String): Void
+    }
+
+    def resultToError(msg: String, r: Result[e, a]): a \ Error = match r {
+        case Ok(x) => x
+        case Err(_) => Error.error(msg)
+    }
+
+    def optionToError(msg: String, r: Option[a]): a \ Error = match r {
+        case Some(x) => x
+        case None => Error.error(msg)
+    }
+
     type alias CliConfig = {
         numRuns = Int32,
         gameConfig = GameConfig
     }
 
-    pub def parseHelper(args: List[String], config: CliConfig): CliConfig \ Abort = match args {
+    def defaultConfig(): CliConfig = {
+        numRuns = 1,
+        gameConfig = {
+            westPlayers = Map#{},
+            eastPlayers = Map#{}
+        }
+    }
+
+    pub def parse(args: List[String]): CliConfig \ Error = parseHelper(args, defaultConfig())
+
+    def parseHelper(args: List[String], config: CliConfig): CliConfig \ Error = match args {
         case Nil => config
         case "-n" :: num :: tl =>
-            let n = Int32.parse(10, num) |> Result.getOrAbort;
+            let n = Int32.parse(10, num) |> resultToError("Invalid number: ${num}");
             let newConfig = { numRuns = n | config };
             parseHelper(tl, newConfig)
         case "-e" :: assignment :: tl =>
@@ -29,19 +53,19 @@ mod Cli {
             let newGameConfig = { westPlayers = newWestPlayers | config#gameConfig };
             let newConfig = { gameConfig = newGameConfig | config };
             parseHelper(tl, newConfig)
-        case opt => Abort.abort(RichString.fromString("Unrecognized option: ${opt}"))
+        case opt => Error.error("Unrecognized option: ${opt}")
     }
 
-    def parseAssignment(assignment: String, usedNames: Set[String]): (String, Bot) \ Abort = {
+    def parseAssignment(assignment: String, usedNames: Set[String]): (String, Bot) \ Error = {
         let parts = String.splitOn(substr = "=", assignment);
         match parts {
             case name :: botName :: Nil =>
                 if (Set.memberOf(name, usedNames)) {
-                    Abort.abort(RichString.fromString("Repeated name"))
+                    Error.error("Repeated name: ${name}")
                 };
-                let bot = Bots.bots() |> Map.getOrAbort(botName);
+                let bot = Bots.bots() |> Map.get(botName) |> optionToError("Unknown bot: ${botName}");
                 (name, bot)
-            case _ => Abort.abort(RichString.fromString("Invalid assignment"))
+            case _ => Error.error("Invalid assignment")
         }
     }
 }

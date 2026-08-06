@@ -368,11 +368,11 @@ mod Gui {
         slider.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         let buttonPanel = new JPanel();
-        let beginningButton = new JButton("⏮");
+        let beginningButton    = new JButton("⏮︎");
         let fastBackwardButton = new JButton("⏪︎");
-        let startButton = new JButton("▶");
-        let fastForwardButton = new JButton("⏩︎");
-        let endButton = new JButton("⏭");
+        let startButton        = new JButton("▶︎");
+        let fastForwardButton  = new JButton("⏩︎");
+        let endButton          = new JButton("⏭︎");
         let forcesButton = new JButton("Show Forces");
 
         buttonPanel.add(beginningButton);
@@ -380,6 +380,7 @@ mod Gui {
         buttonPanel.add(startButton);
         buttonPanel.add(fastForwardButton);
         buttonPanel.add(endButton);
+        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(forcesButton);
 
         let gameLoop = makeGameLoop(frames, anchor, display, slider, updatingSlider);
@@ -428,11 +429,11 @@ mod Gui {
 
         def onClickStartPause(_): Unit = {
             if (gameLoop.isRunning()) {
-                startButton.setText("▶");
+                startButton.setText("▶︎");
                 gameLoop.stop();
                 pauseAnchor(anchor)
             } else {
-                startButton.setText("⏸");
+                startButton.setText("⏸︎");
                 gameLoop.start();
                 unpauseAnchor(1, anchor)
             }

@@ -5,5 +5,6 @@ type alias Pitch = {
     westScore = Int32,
     eastScore = Int32,
     timeMs = Int32,
-    state = GameState
+    state = GameState,
+    lastContact = Team
 }

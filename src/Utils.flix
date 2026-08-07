@@ -47,9 +47,9 @@ mod Utils {
         }
     }
 
-    pub def mkCollisionListener(f: (Body, Body) -> Unit \ ef): CollisionListener[Body, Body] = {
+    pub def mkCollisionListener(f: (Body, Body) -> Unit \ ef): CollisionListener[Body, Body] \ IO = {
         let adapter = new CollisionListenerAdapter[Body, Body] {
-            def collision(_this: CollisionListenerAdapter[Body, Body], data: BroadphaseCollisionData[Body, Body]): Bool \ IO = {
+            def collision(_this: CollisionListenerAdapter[Body, Body], data: BroadphaseCollisionData[Body, Body]): Bool \ IO + ef = {
                 let b1 = data.getBody1();
                 let b2 = data.getBody2();
                 f(b1, b2);

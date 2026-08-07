@@ -10,7 +10,7 @@ type alias MarshallBox = {
     preGameJunk = MutList[Body, Static],
     westScore = Ref[Int32, Static],
     eastScore = Ref[Int32, Static],
-    lastContact = Ref[Option[Team], Static]
+    lastContact = Ref[Option[String], Static]
 }
 
 mod MarshallBox {

@@ -99,6 +99,7 @@ mod Simulation {
                 case _ => ()
             }
         };
+        world.addCollisionListener(Utils.mkCollisionListener(onCollision));
 
         // All the refs here are placeholders
         let box = {
